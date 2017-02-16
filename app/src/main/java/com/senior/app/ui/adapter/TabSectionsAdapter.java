@@ -7,10 +7,6 @@ import android.support.v4.app.FragmentPagerAdapter;
 
 import com.senior.app.R;
 
-/**
- * Created by Oguz on 16/02/2017.
- */
-
 public class TabSectionsAdapter extends FragmentPagerAdapter {
 
     private Context mContext;

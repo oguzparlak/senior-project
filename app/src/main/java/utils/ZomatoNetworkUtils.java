@@ -1,13 +1,10 @@
-package com.senior.app.ui.utils;
+package utils;
 
 import android.net.Uri;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 
-/**
- * Created by Oguz on 16/02/2017.
- */
 
 public class ZomatoNetworkUtils {
 

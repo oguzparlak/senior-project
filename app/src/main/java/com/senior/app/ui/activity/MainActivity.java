@@ -1,5 +1,6 @@
 package com.senior.app.ui.activity;
 
+import android.content.res.Configuration;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -20,9 +21,10 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.senior.app.R;
+import com.senior.app.ui.adapter.RestaurantsAdapter;
 import com.senior.app.ui.adapter.TabSectionsAdapter;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends BaseActivity implements RestaurantsAdapter.OnClickHandler {
 
     private TabSectionsAdapter mTabSectionsAdapter;
 
@@ -85,4 +87,16 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+    }
+
+    /**
+     * Fired when item click on RecyclerView
+     */
+    @Override
+    public void onClick(/*Restaurant Object*/) {
+        // Create an intent regarded to Restaurant object.
+    }
 }
