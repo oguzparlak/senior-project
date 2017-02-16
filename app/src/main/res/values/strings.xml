@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">Restaurants</string>
+    <string name="action_settings">Settings</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+
+    <!-- Tab Section Names -->
+    <string name="tab_section_explore">Explore</string>
+    <string name="tab_section_nearby">Nearby</string>
+    <string name="tab_section_favorites">Favorites</string>
+
+
+
+</resources>
