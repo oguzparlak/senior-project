@@ -1,42 +1,67 @@
 package com.senior.app.ui.activity;
 
-import android.content.res.Configuration;
-import android.support.design.widget.TabLayout;
+import android.Manifest;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentPagerAdapter;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
-import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Spinner;
+import android.widget.Toast;
 
-import android.widget.TextView;
-
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.gson.Gson;
+import com.loopj.android.http.JsonHttpResponseHandler;
 import com.senior.app.R;
-import com.senior.app.ui.adapter.RestaurantsAdapter;
 import com.senior.app.ui.adapter.TabSectionsAdapter;
 
-public class MainActivity extends BaseActivity implements RestaurantsAdapter.OnClickHandler {
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import cz.msebera.android.httpclient.Header;
+import model.Restaurant;
+import utils.ZomatoNetworkUtils;
+
+public class MainActivity extends BaseActivity implements AdapterView.OnItemSelectedListener, TabLayout.OnTabSelectedListener {
+
+    private static final String TAG = MainActivity.class.getSimpleName();
+
+    private static final int PLACE_PICKER_REQUEST = 1;
+    private static final int LOCATION_REQUEST = 2;
 
     private TabSectionsAdapter mTabSectionsAdapter;
-
     private ViewPager mViewPager;
+
+    // Spinner
+    private Spinner mSpinner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         initializeView();
-        
+
+        getSupportActionBar().setTitle(null);
+
     }
 
     @Override
@@ -56,9 +81,38 @@ public class MainActivity extends BaseActivity implements RestaurantsAdapter.OnC
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_search) {
+            openPlacePicker();
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Sends a Place Picker Request
+     */
+    private void openPlacePicker() {
+        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+        try {
+            startActivityForResult(builder.build(this), PLACE_PICKER_REQUEST);
+        } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
+            Log.e(TAG, "openPlacePicker: Play Services not available.");
+        }
+    }
+
+    /**
+     * Handle Google Places Requests here
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PLACE_PICKER_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                // Get the data of the selected place
+                Place place = PlacePicker.getPlace(this, data);
+                Log.d(TAG, "onActivityResult: " + place.getName());
+            }
+        }
     }
 
     /**
@@ -77,26 +131,132 @@ public class MainActivity extends BaseActivity implements RestaurantsAdapter.OnC
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(mViewPager);
 
+        tabLayout.addOnTabSelectedListener(this);
+
+        // Spinner
+        mSpinner = (Spinner) findViewById(R.id.city_spinner);
+
+        // Create an ArrayAdapter using the string array and a default spinner layout
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.city_array, R.layout.spinner_item);
+
+        // Specify the layout to use when the list of choices appears
+        adapter.setDropDownViewResource(R.layout.dropdown_item);
+
+        // Apply the adapter to the spinner
+        mSpinner.setAdapter(adapter);
+
+        mSpinner.setOnItemSelectedListener(this);
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                pushLocationData();
             }
         });
     }
 
+    /**
+     * Spinner Callbacks
+     */
     @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
+    public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long l) {
+        Log.d(TAG, "onItemSelected: " + adapterView.getItemAtPosition(pos));
+    }
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+        Log.d(TAG, "onNothingSelected: Nothing Selected");
     }
 
     /**
-     * Fired when item click on RecyclerView
+     * Tab Callbacks
      */
     @Override
-    public void onClick(/*Restaurant Object*/) {
-        // Create an intent regarded to Restaurant object.
+    public void onTabSelected(TabLayout.Tab tab) {
+        // Nearby Fragment, Make an API Call and update the View
+        // Push the data into Firebase
+        // if (tab.getPosition() == 1) {
+        //    Log.d(TAG, "onTabSelected: " + "Nearby Tab is Selected");
+        //     pushLocationData();
+        // }
+    }
+
+    @Override
+    public void onTabUnselected(TabLayout.Tab tab) {
+        // do nothing
+    }
+
+    @Override
+    public void onTabReselected(TabLayout.Tab tab) {
+        // do nothing
+    }
+
+    private void pushLocationData() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST);
+
+        }
+
+        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (location != null) {
+            Log.d(TAG, "pushLocationData: Lat: " + location.getLatitude());
+            Log.d(TAG, "pushLocationData: Lng: " + location.getLongitude());
+
+            // Make an API Call
+            ZomatoNetworkUtils.get(ZomatoNetworkUtils.buildURL(location.getLatitude(),
+                    location.getLongitude()), null, new JsonHttpResponseHandler() {
+
+                        @Override
+                        public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+
+                            try {
+                                JSONArray restaurants = response.getJSONArray("restaurants");
+
+                                for (int i = 0; i < restaurants.length(); i++) {
+                                    JSONObject restaurant = restaurants.getJSONObject(i);
+                                    JSONObject restaurantDetails = restaurant.getJSONObject("restaurant");
+                                    long id = restaurantDetails.getLong("id");
+                                    String thumb = restaurantDetails.getString("thumb");
+                                    String name = restaurantDetails.getString("name");
+                                    mRootReference.child("nearby").child(String.valueOf(id)).setValue(new Restaurant(id, name, thumb, 0, 0));
+                                }
+
+
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+
+                    }
+            );
+        }
+
+    }
+
+    // Handle location results here
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case LOCATION_REQUEST: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    pushLocationData();
+
+                } else {
+                    // permission denied, show toast
+                    Toast.makeText(this,
+                            "You need to allow permission for location changes",
+                            Toast.LENGTH_LONG).show();
+                }
+            }
+        }
     }
 }

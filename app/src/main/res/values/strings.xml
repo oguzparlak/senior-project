@@ -8,6 +8,15 @@
     <string name="tab_section_nearby">Nearby</string>
     <string name="tab_section_favorites">Favorites</string>
 
+    <!-- Menu -->
+    <string name="search">Search</string>
+    <string name="filter">Filter</string>
 
+    <!-- Spinner -->
+    <string-array name="city_array">
+        <item name="new_york">New York City</item>
+        <item name="istanbul">Istanbul</item>
+        <item name="london">London</item>
+    </string-array>
 
 </resources>

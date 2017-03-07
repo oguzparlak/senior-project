@@ -6,6 +6,10 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
 import com.senior.app.R;
+import com.senior.app.ui.fragment.BaseFragment;
+import com.senior.app.ui.fragment.ExploreFragment;
+import com.senior.app.ui.fragment.FavoritesFragment;
+import com.senior.app.ui.fragment.NearbyFragment;
 
 public class TabSectionsAdapter extends FragmentPagerAdapter {
 
@@ -19,15 +23,15 @@ public class TabSectionsAdapter extends FragmentPagerAdapter {
     @Override
     public Fragment getItem(int position) {
         switch (position) {
-            case 1:
+            case 0:
                 // Explore Fragment
-                return null;
-            case 2:
+                return new ExploreFragment();
+            case 1:
                 // NearbyFragment
-                return null;
-            case 3:
+                return new NearbyFragment();
+            case 2:
                 // Favorites Fragment
-                return null;
+                return new FavoritesFragment();
             default:
                 return null;
         }

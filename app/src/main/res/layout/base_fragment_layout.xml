@@ -2,12 +2,22 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    xmlns:recylcer_view="http://schemas.android.com/tools">
+
+    <ProgressBar
+        android:layout_marginTop="8dp"
+        android:id="@+id/pb_fragments"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view_restaurants"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:padding="8dp"
+        android:scrollbars="vertical"
+        recylcer_view:listitem="@layout/restaurant_list_item">
     </android.support.v7.widget.RecyclerView>
 
 </FrameLayout>
