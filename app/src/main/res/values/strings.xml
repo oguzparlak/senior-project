@@ -17,6 +17,7 @@
         <item name="new_york">New York City</item>
         <item name="istanbul">Istanbul</item>
         <item name="london">London</item>
+        <item name="nearby">Nearby</item>
     </string-array>
 
 </resources>

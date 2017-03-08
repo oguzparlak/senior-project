@@ -1,10 +1,13 @@
 package com.senior.app.ui.activity;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -43,22 +46,38 @@ import utils.ZomatoNetworkUtils;
 
 public class MainActivity extends BaseActivity implements AdapterView.OnItemSelectedListener, TabLayout.OnTabSelectedListener {
 
+    // TODO Handle Favorites
+    // TODO Handle Auth
+    // TODO Handle Data Matching
+
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private static final int PLACE_PICKER_REQUEST = 1;
     private static final int LOCATION_REQUEST = 2;
 
+    private static final String SPINNER_INDEX = "SPINNER_INDEX";
+
     private TabSectionsAdapter mTabSectionsAdapter;
     private ViewPager mViewPager;
+    private TabLayout mTabLayout;
 
     // Spinner
     private Spinner mSpinner;
+
+    private FloatingActionButton mLocationFab;
+
+    private boolean locationRequested; // Keep control of location request, just the app is started, otherwise manually
+    private int lastSpinnerIndex; // To be saved into sharedPreferences
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initializeView();
+
+        // persist the state of the spinner on app is restarted
+        SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
+        mSpinner.setSelection(preferences.getInt(SPINNER_INDEX, 1));
 
         getSupportActionBar().setTitle(null);
 
@@ -128,10 +147,10 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         mViewPager = (ViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mTabSectionsAdapter);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
-        tabLayout.setupWithViewPager(mViewPager);
+        mTabLayout = (TabLayout) findViewById(R.id.tabs);
+        mTabLayout.setupWithViewPager(mViewPager);
 
-        tabLayout.addOnTabSelectedListener(this);
+        mTabLayout.addOnTabSelectedListener(this);
 
         // Spinner
         mSpinner = (Spinner) findViewById(R.id.city_spinner);
@@ -148,10 +167,11 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
 
         mSpinner.setOnItemSelectedListener(this);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
+        mLocationFab = (FloatingActionButton) findViewById(R.id.fab);
+        mLocationFab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                // Refresh the data anytime mLocationFab is tapped
                 pushLocationData();
             }
         });
@@ -163,6 +183,14 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long l) {
         Log.d(TAG, "onItemSelected: " + adapterView.getItemAtPosition(pos));
+        int lastIndex = adapterView.getCount() - 1;
+        // TODO Handle Spinner Changes, Firebase, API Calls... etc
+        if (pos != lastIndex) {
+            lastSpinnerIndex = pos;
+        } else {
+            TabLayout.Tab tab =  mTabLayout.getTabAt(1);
+            tab.select();
+        }
     }
 
     @Override
@@ -175,12 +203,24 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
      */
     @Override
     public void onTabSelected(TabLayout.Tab tab) {
-        // Nearby Fragment, Make an API Call and update the View
-        // Push the data into Firebase
-        // if (tab.getPosition() == 1) {
-        //    Log.d(TAG, "onTabSelected: " + "Nearby Tab is Selected");
-        //     pushLocationData();
-        // }
+        // push the data once when the onCreate is called
+        if (!locationRequested && tab.getPosition() == 1) {
+            pushLocationData();
+            locationRequested = true;
+        }
+
+        if (tab.getPosition() != 1) {
+            // hide the fab
+            mLocationFab.hide();
+            // set previously selected
+            mSpinner.setSelection(lastSpinnerIndex);
+        } else {
+            // show the fab
+            mLocationFab.show();
+            // save the previous selected index
+            lastSpinnerIndex = mSpinner.getSelectedItemPosition();
+            mSpinner.setSelection(getResources().getStringArray(R.array.city_array).length - 1, true);
+        }
     }
 
     @Override
@@ -227,7 +267,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
                                     mRootReference.child("nearby").child(String.valueOf(id)).setValue(new Restaurant(id, name, thumb, 0, 0));
                                 }
 
-
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
@@ -259,4 +298,16 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
             }
         }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putInt(SPINNER_INDEX, lastSpinnerIndex);
+        editor.apply();
+
+    }
+
 }
