@@ -9,6 +9,7 @@ import com.senior.app.R;
 import com.squareup.picasso.Picasso;
 
 import model.Restaurant;
+import su.levenetc.android.badgeview.BadgeView;
 
 /**
  * Created by Oguz on 23/02/2017.
@@ -18,25 +19,25 @@ public class RestaurantViewHolder extends RecyclerView.ViewHolder {
 
     private ImageView mThumbImage;
     private TextView mRestaurantTitle;
-    private TextView mPriceIndicator;
-    private TextView mRatingIndicator;
+    private BadgeView mRatingBadge;
+    private ImageView mStarImage;
 
     public RestaurantViewHolder(View itemView) {
         super(itemView);
         mThumbImage = (ImageView) itemView.findViewById(R.id.restaurant_thumb_image_view);
         mRestaurantTitle = (TextView) itemView.findViewById(R.id.restaurant_title);
-        mPriceIndicator = (TextView) itemView.findViewById(R.id.restaurant_price_indicator);
-        mRatingIndicator = (TextView) itemView.findViewById(R.id.restaurant_rating_indicator);
+        mRatingBadge = (BadgeView) itemView.findViewById(R.id.badge_view);
+        mStarImage = (ImageView) itemView.findViewById(R.id.star_image_view);
     }
 
-    public void bind(Restaurant restaurant) {
-        if (restaurant.getThumb().isEmpty()) {
+    public void bind(Restaurant restaurant, View.OnClickListener starClickListener) {
+        if (restaurant.getPhotos().isEmpty()) {
             mThumbImage.setImageResource(R.mipmap.ic_launcher);
         } else {
-            Picasso.with(itemView.getContext()).load(restaurant.getThumb()).into(mThumbImage);
+            Picasso.with(itemView.getContext()).load(restaurant.getPhotos().get(0)).into(mThumbImage);
         }
         mRestaurantTitle.setText(restaurant.getName());
-        //mPriceIndicator.setText(restaurant.getPriceRating());
-        mRatingIndicator.setText(String.valueOf(restaurant.getRating()));
+        mStarImage.setOnClickListener(starClickListener);
+        mRatingBadge.setValue(restaurant.getRating());
     }
 }

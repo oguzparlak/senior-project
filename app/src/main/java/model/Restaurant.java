@@ -1,101 +1,67 @@
 package model;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * Created by Oguz on 21/02/2017.
  */
 
 public class Restaurant {
 
-    private long zomatoId;
     private String name;
-    private String thumb;
     private String address;
-    private String locality;
-    private String city;
-    private int zipCode;
-    private double lat;
-    private double lon;
-    private String cuisine;
-    private String currency;
-    private int priceRating;
-    private double rating;
+    private List<String> cuisines;
+    private List<String> photos;
+    private String phoneNumber;
+    private String rating;
+    private String reviewCount;
+    private Map<String, String> specs;
+
+
+    public Restaurant(String name, String address, List<String> cuisines, List<String> photos, String phoneNumber, String rating, String reviewCount, Map<String, String> specs) {
+        this.name = name;
+        this.address = address;
+        this.cuisines = cuisines;
+        this.photos = photos;
+        this.phoneNumber = phoneNumber;
+        this.rating = rating;
+        this.reviewCount = reviewCount;
+        this.specs = specs;
+    }
 
     public Restaurant() {
-
-    }
-
-    public Restaurant(long zomatoId, String name, String thumb, String address, String locality, String city, int zipCode, double lat, double lon, String cuisine, String currency) {
-        this.zomatoId = zomatoId;
-        this.name = name;
-        this.thumb = thumb;
-        this.address = address;
-        this.locality = locality;
-        this.city = city;
-        this.zipCode = zipCode;
-        this.lat = lat;
-        this.lon = lon;
-        this.cuisine = cuisine;
-        this.currency = currency;
-    }
-
-
-    public Restaurant(long zomatoId, String name, String thumb, double rating, int priceRating) {
-        this.zomatoId = zomatoId;
-        this.name = name;
-        this.thumb = thumb;
-        this.rating = rating;
-        this.priceRating = priceRating;
-    }
-
-    public int getPriceRating() {
-        return priceRating;
-    }
-
-    public double getRating() {
-        return rating;
-    }
-
-    public long getZomatoId() {
-        return zomatoId;
     }
 
     public String getName() {
         return name;
     }
 
-    public String getThumb() {
-        return thumb;
-    }
-
     public String getAddress() {
         return address;
     }
 
-    public String getLocality() {
-        return locality;
+    public List<String> getCuisines() {
+        return cuisines;
     }
 
-    public String getCity() {
-        return city;
+    public List<String> getPhotos() {
+        return photos;
     }
 
-    public int getZipCode() {
-        return zipCode;
+    public String getPhoneNumber() {
+        return phoneNumber;
     }
 
-    public double getLat() {
-        return lat;
+    public String getRating() {
+        return rating;
     }
 
-    public double getLon() {
-        return lon;
+    public String getReviewCount() {
+        return reviewCount;
     }
 
-    public String getCuisine() {
-        return cuisine;
-    }
-
-    public String getCurrency() {
-        return currency;
+    public Map<String, String> getSpecs() {
+        return specs;
     }
 }

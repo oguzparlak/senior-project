@@ -11,6 +11,29 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal" />
 
+    <TextView
+        android:visibility="invisible"
+        android:id="@+id/fav_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:textStyle="bold"
+        android:textSize="24sp"
+        android:textAlignment="center"
+        android:text="Your favorites will appear here ! Sign up to add favorites"/>
+
+    <Button
+        android:visibility="invisible"
+        android:id="@+id/signUpBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_gravity="center"
+        android:layout_marginTop="64dp"
+        android:background="@color/colorPrimary"
+        android:text="Sign Up"
+        android:onClick="onSignUpButtonClicked"
+        android:textColor="@android:color/white"/>
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/recycler_view_restaurants"
         android:layout_width="match_parent"

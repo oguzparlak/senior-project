@@ -43,8 +43,12 @@ def main():
             # 0.6 is considered as a match 
             if similarity > 0.6:
                 # there is a match push the data and break the loop
-                database.put('/nyc-zomato-external', res_id, restaurant_details)
-                
+                try:
+                    database.put('/nyc-zomato-external', res_id, restaurant_details)
+                except Exception:
+                    print "Can't push to Firebase"
+                    continue 
+
                 reviews_session = requests.Session()
                 reviews_response = reviews_session.get('https://developers.zomato.com/api/v2.1/reviews?res_id=' + res_id,
                                     headers={'user-key': '8b000e3bd6d2a4434c926aeca9a040d0'})
@@ -55,14 +59,22 @@ def main():
                     print "Couldn't find the data in the specified url"
                     continue
 
-                reviews_arr = reviews_root['user_reviews']
+                try:
+                    reviews_arr = reviews_root['user_reviews']
 
-                for review in reviews_arr:
-                    review_details = review['review']
-                    # push the review
-                    database.post('/nyc-zomato-reviews/' + res_id, review_details)
+                    for review in reviews_arr:
+                        review_details = review['review']
+                        # push the review
+                        try:
+                            database.post('/nyc-zomato-reviews/' + res_id, review_details)
+                        except Exception:
+                            print "Can't post to Firebase"
+                            continue
 
-                break
+                    break
+
+                except Exception:
+                    print "Key Error"
 
 if __name__ == '__main__':
     main()

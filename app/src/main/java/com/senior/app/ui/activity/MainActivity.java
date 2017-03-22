@@ -25,12 +25,14 @@ import android.widget.ArrayAdapter;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.gson.Gson;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.senior.app.R;
@@ -51,6 +53,9 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     // TODO Handle Data Matching
 
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    // Firebase Auth Test
+    private FirebaseAuth.AuthStateListener mAuthListener;
 
     private static final int PLACE_PICKER_REQUEST = 1;
     private static final int LOCATION_REQUEST = 2;
@@ -247,34 +252,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         if (location != null) {
             Log.d(TAG, "pushLocationData: Lat: " + location.getLatitude());
             Log.d(TAG, "pushLocationData: Lng: " + location.getLongitude());
-
-            // Make an API Call
-            ZomatoNetworkUtils.get(ZomatoNetworkUtils.buildURL(location.getLatitude(),
-                    location.getLongitude()), null, new JsonHttpResponseHandler() {
-
-                        @Override
-                        public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
-
-                            try {
-                                JSONArray restaurants = response.getJSONArray("restaurants");
-
-                                for (int i = 0; i < restaurants.length(); i++) {
-                                    JSONObject restaurant = restaurants.getJSONObject(i);
-                                    JSONObject restaurantDetails = restaurant.getJSONObject("restaurant");
-                                    long id = restaurantDetails.getLong("id");
-                                    String thumb = restaurantDetails.getString("thumb");
-                                    String name = restaurantDetails.getString("name");
-                                    mRootReference.child("nearby").child(String.valueOf(id)).setValue(new Restaurant(id, name, thumb, 0, 0));
-                                }
-
-                            } catch (JSONException e) {
-                                e.printStackTrace();
-                            }
-
-                        }
-
-                    }
-            );
         }
 
     }
@@ -310,4 +287,17 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
 
     }
 
+    /**
+     * Launch FirebaseUI Intent
+     */
+    public void onSignUpButtonClicked(View view) {
+        Log.d(TAG, "onSignUpButtonClicked: ");
+        startActivity(AuthUI.getInstance()
+                .createSignInIntentBuilder()
+                .setIsSmartLockEnabled(true)
+                .setProviders(
+                        AuthUI.EMAIL_PROVIDER,
+                        AuthUI.GOOGLE_PROVIDER)
+                .build());
+    }
 }

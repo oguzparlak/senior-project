@@ -7,7 +7,7 @@ public class NearbyFragment extends BaseFragment {
 
     @Override
     Query getQuery(DatabaseReference reference) {
-        return reference.child("/nearby");
+        return reference.child("/new-york-city").orderByChild("rating").limitToLast(50);
     }
 
 }

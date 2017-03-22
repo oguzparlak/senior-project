@@ -96,24 +96,27 @@ class TripAdvisorSpider(scrapy.Spider):
         # Root reference of the database
         database = firebase.FirebaseApplication('https://senior-app-1487777466334.firebaseio.com', None)
 
+        photos = []
+
+        # push photos
+        for photo in restaurant['photos']:
+            photos.append(photo)
+
         restaurant_data = {
             "name": restaurant['name'],
-            "trip_advisor_rating": restaurant['rating'],
+            "rating": restaurant['rating'],
             "cuisines": restaurant['cuisines'],
-            "trip_advisor_review_count": restaurant['review_count'],
-            "phone_number": restaurant['phone_number'],
+            "photos": photos,
+            "reviewCount": restaurant['review_count'],
+            "phoneNumber": restaurant['phone_number'],
             "address": restaurant['address'],
             "specs": restaurant['specifications']
         }
 
         res_id = database.post('/new-york-city', restaurant_data)['name']
-        
+
         # push reviews
         for review in restaurant['reviews']:
             database.post('/reviews/' + res_id, review)
-
-        # push photos
-        for photo in restaurant['photos']:
-            database.post('/photos/' + res_id, photo)
 
         return restaurant

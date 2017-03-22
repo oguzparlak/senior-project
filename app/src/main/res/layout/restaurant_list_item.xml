@@ -27,6 +27,7 @@
             <TextView
                 android:id="@+id/restaurant_title"
                 android:text="Nusr-et"
+                android:maxLines="2"
                 android:layout_margin="8dp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -35,25 +36,27 @@
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true" />
 
-            <TextView
-                android:id="@+id/restaurant_price_indicator"
-                android:layout_below="@+id/restaurant_title"
-                android:layout_margin="8dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="$$$$"
-                />
 
-            <TextView
-                android:id="@+id/restaurant_rating_indicator"
-                android:text="3.9"
-                android:layout_margin="8dp"
+            <su.levenetc.android.badgeview.BadgeView
+                android:id="@+id/badge_view"
+                app:badgeText="4.5"
+                app:badgeBackgroundColor="@color/colorPrimary"
+                app:badgeTextColor="@android:color/white"
+                app:badgeTextSize="12sp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/restaurant_price_indicator"
+                android:layout_alignParentBottom="true"
+                android:layout_margin="8dp" />
+
+            <ImageView
+                android:layout_margin="8dp"
+                android:layout_alignParentBottom="true"
                 android:layout_alignParentRight="true"
-                android:textColor="#9ACD32"/>
-
+                android:layout_gravity="end"
+                android:id="@+id/star_image_view"
+                android:layout_height="28dp"
+                android:layout_width="28dp"
+                app:srcCompat="@drawable/ic_toggle_star_outline_24" />
 
         </RelativeLayout>
 
