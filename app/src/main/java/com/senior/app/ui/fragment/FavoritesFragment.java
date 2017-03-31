@@ -26,7 +26,7 @@ public class FavoritesFragment extends BaseFragment {
             // Show the fav-message
             mFavMessageView.setVisibility(View.VISIBLE);
             mSignUpButton.setVisibility(View.VISIBLE);
-            return reference.child("/favorites");
+            return reference.child("/null-root");
         }
     }
 }

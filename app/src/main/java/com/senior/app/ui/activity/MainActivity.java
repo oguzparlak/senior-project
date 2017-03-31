@@ -13,6 +13,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
@@ -33,14 +34,18 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.gson.Gson;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.senior.app.R;
 import com.senior.app.ui.adapter.TabSectionsAdapter;
+import com.senior.app.ui.fragment.ExploreFragment;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
 import model.Restaurant;
@@ -48,19 +53,20 @@ import utils.ZomatoNetworkUtils;
 
 public class MainActivity extends BaseActivity implements AdapterView.OnItemSelectedListener, TabLayout.OnTabSelectedListener {
 
-    // TODO Handle Favorites
-    // TODO Handle Auth
-    // TODO Handle Data Matching
-
     private static final String TAG = MainActivity.class.getSimpleName();
 
     // Firebase Auth Test
     private FirebaseAuth.AuthStateListener mAuthListener;
+    private FirebaseAuth mAuth;
 
     private static final int PLACE_PICKER_REQUEST = 1;
     private static final int LOCATION_REQUEST = 2;
+    private static final int LOGIN_REQUEST = 3;
 
     private static final String SPINNER_INDEX = "SPINNER_INDEX";
+
+    private int lastCityIndex = 0;
+    private int currentSpinnerIndex;
 
     private TabSectionsAdapter mTabSectionsAdapter;
     private ViewPager mViewPager;
@@ -71,18 +77,32 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
 
     private FloatingActionButton mLocationFab;
 
-    private boolean locationRequested; // Keep control of location request, just the app is started, otherwise manually
-    private int lastSpinnerIndex; // To be saved into sharedPreferences
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         initializeView();
+        
+        // Init FirebaseAuth
+        mAuth = FirebaseAuth.getInstance();
+        
+        mAuthListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                
+                if (user == null) {
+                    Log.d(TAG, "onAuthStateChanged: User logged out");
+                } else {
+                    Log.d(TAG, "onAuthStateChanged: User logged in");
+                }
+            }
+        };
 
         // persist the state of the spinner on app is restarted
         SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
-        mSpinner.setSelection(preferences.getInt(SPINNER_INDEX, 1));
+        int spinnerIndex = preferences.getInt(SPINNER_INDEX, 0);
+        mSpinner.setSelection(spinnerIndex);
 
         getSupportActionBar().setTitle(null);
 
@@ -107,6 +127,11 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
             return true;
         } else if (id == R.id.action_search) {
             openPlacePicker();
+            return true;
+        } else if (id == R.id.action_sign_out) {
+            FirebaseAuth.getInstance().signOut();
+            Toast.makeText(this, "Signed-out", Toast.LENGTH_LONG).show();
+            selectTabAt(0);
             return true;
         }
 
@@ -135,6 +160,13 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
                 // Get the data of the selected place
                 Place place = PlacePicker.getPlace(this, data);
                 Log.d(TAG, "onActivityResult: " + place.getName());
+            }
+        } else if (requestCode == LOGIN_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                selectTabAt(0);
+                Toast.makeText(this, "Welcome, " + FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), Toast.LENGTH_LONG).show();
+            } else if (resultCode == RESULT_CANCELED) {
+                // user pressed back button
             }
         }
     }
@@ -187,13 +219,51 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
      */
     @Override
     public void onItemSelected(AdapterView<?> adapterView, View view, int pos, long l) {
-        Log.d(TAG, "onItemSelected: " + adapterView.getItemAtPosition(pos));
-        int lastIndex = adapterView.getCount() - 1;
-        // TODO Handle Spinner Changes, Firebase, API Calls... etc
-        if (pos != lastIndex) {
-            lastSpinnerIndex = pos;
+        int favIndex = adapterView.getCount() - 1;
+        int nearbyIndex = favIndex - 1;
+        if (pos == favIndex) {
+            // Select the fav tab
+            selectTabAt(2);
+            // if previous index is not nearby, log the city
+            logCityIndex(favIndex, nearbyIndex);
+        } else if (pos == nearbyIndex) {
+            // Select the nearby tab
+            selectTabAt(1);
+            // if previous index is not fav, log the city
+            logCityIndex(favIndex, nearbyIndex);
         } else {
-            TabLayout.Tab tab =  mTabLayout.getTabAt(1);
+            // Select the explore tab
+            selectTabAt(0);
+            lastCityIndex = pos;
+            // reload the fragment accordingly
+            List<Fragment> fragments = getSupportFragmentManager().getFragments();
+            for (Fragment f : fragments) {
+                if (f instanceof ExploreFragment) {
+                    mViewPager.getAdapter().notifyDataSetChanged();
+                }
+            }
+        }
+        // set current spinner index
+        setSpinnerIndex(pos);
+    }
+
+    private void setSpinnerIndex(int index) {
+        currentSpinnerIndex = index;
+    }
+    
+    public int getLastCityIndex() {
+        return lastCityIndex;
+    }
+
+    private void logCityIndex(int favIndex, int nearbyIndex) {
+        if (currentSpinnerIndex != favIndex && currentSpinnerIndex != nearbyIndex) {
+            lastCityIndex = currentSpinnerIndex;
+        }
+    }
+
+    public void selectTabAt(int pos) {
+        TabLayout.Tab tab = mTabLayout.getTabAt(pos);
+        if (tab != null) {
             tab.select();
         }
     }
@@ -208,23 +278,23 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
      */
     @Override
     public void onTabSelected(TabLayout.Tab tab) {
-        // push the data once when the onCreate is called
-        if (!locationRequested && tab.getPosition() == 1) {
-            pushLocationData();
-            locationRequested = true;
-        }
-
-        if (tab.getPosition() != 1) {
-            // hide the fab
-            mLocationFab.hide();
-            // set previously selected
-            mSpinner.setSelection(lastSpinnerIndex);
-        } else {
-            // show the fab
-            mLocationFab.show();
-            // save the previous selected index
-            lastSpinnerIndex = mSpinner.getSelectedItemPosition();
-            mSpinner.setSelection(getResources().getStringArray(R.array.city_array).length - 1, true);
+        // handle tab selections
+        int currentPosition = tab.getPosition();
+        int favIndex = mSpinner.getAdapter().getCount() - 1;
+        int nearbyIndex = favIndex - 1;
+        switch (currentPosition) {
+            case 0:
+                // set selection to last saved city index
+                mSpinner.setSelection(lastCityIndex, true);
+                break;
+            case 1:
+                mSpinner.setSelection(nearbyIndex);
+                break;
+            case 2:
+                mSpinner.setSelection(favIndex);
+                break;
+            default:
+                break;
         }
     }
 
@@ -277,27 +347,34 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        if (mAuthListener != null)
+            mAuth.addAuthStateListener(mAuthListener);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
-
         SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
-        editor.putInt(SPINNER_INDEX, lastSpinnerIndex);
+        editor.putInt(SPINNER_INDEX, lastCityIndex);
         editor.apply();
 
+        if (mAuthListener != null)
+            mAuth.removeAuthStateListener(mAuthListener);
     }
 
     /**
      * Launch FirebaseUI Intent
      */
     public void onSignUpButtonClicked(View view) {
-        Log.d(TAG, "onSignUpButtonClicked: ");
-        startActivity(AuthUI.getInstance()
+        startActivityForResult(AuthUI.getInstance()
                 .createSignInIntentBuilder()
-                .setIsSmartLockEnabled(true)
+                .setIsSmartLockEnabled(false)
                 .setProviders(
                         AuthUI.EMAIL_PROVIDER,
                         AuthUI.GOOGLE_PROVIDER)
-                .build());
+                .build(), LOGIN_REQUEST);
     }
 }

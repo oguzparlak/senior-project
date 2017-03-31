@@ -38,6 +38,11 @@ public class TabSectionsAdapter extends FragmentPagerAdapter {
     }
 
     @Override
+    public int getItemPosition(Object object) {
+        return POSITION_NONE;
+    }
+
+    @Override
     public int getCount() {
         // Show 3 total pages.
         return 3;

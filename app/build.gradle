@@ -44,9 +44,12 @@ dependencies {
     compile 'com.squareup.picasso:picasso:2.5.2'
     // Badge View
     compile 'com.github.elevenetc:badgeview:v1.0.0'
+    // Image Slider
+    compile "com.android.support:support-v4:25.1.0"
+    compile 'com.nineoldandroids:library:2.4.0'
+    compile 'com.daimajia.slider:library:1.1.5@aar'
 
     testCompile 'junit:junit:4.12'
-    compile 'com.google.code.gson:gson:2.8.0'
 }
 
 apply plugin: 'com.google.gms.google-services'

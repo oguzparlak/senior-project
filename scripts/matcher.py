@@ -22,7 +22,7 @@ def main():
         if (database.get('nyc-zomato-external/', res_id) == None):
             details_session = requests.Session()
             details_response = details_session.get('https://developers.zomato.com/api/v2.1/search?entity_id=280&entity_type=city&q=' + name.replace(" ", "%20"),
-                        headers={'user-key': '8b000e3bd6d2a4434c926aeca9a040d0'})
+                        headers={'user-key': 'ff63af89c112c0bc627bf1fa51f2a10f'})
 
             
             try:

@@ -6,6 +6,8 @@ import android.view.View;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Query;
 import com.loopj.android.http.JsonHttpResponseHandler;
+import com.senior.app.R;
+import com.senior.app.ui.activity.MainActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -22,7 +24,9 @@ public class ExploreFragment extends BaseFragment {
     // Return the Restaurants to be explored in selected city
     @Override
     Query getQuery(DatabaseReference reference) {
-        return reference.child("/new-york-city").orderByChild("reviewCount");
+        int cityIndex = getCityIndex();
+        Log.d(TAG, "getQuery: cityIndex: " + cityIndex);
+        return reference.child(getDatabaseRoot(cityIndex)).orderByChild("rating").limitToFirst(50);
     }
 
 }
