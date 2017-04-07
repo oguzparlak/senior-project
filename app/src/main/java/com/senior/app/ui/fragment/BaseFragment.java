@@ -21,13 +21,20 @@ import android.widget.Toast;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
+import com.like.LikeButton;
+import com.like.OnLikeListener;
 import com.senior.app.R;
 import com.senior.app.ui.activity.DetailActivity;
 import com.senior.app.ui.activity.MainActivity;
 import com.senior.app.ui.viewholder.RestaurantViewHolder;
+
+import java.util.ArrayList;
 
 import model.Restaurant;
 
@@ -77,12 +84,12 @@ public abstract class BaseFragment extends Fragment {
                 RestaurantViewHolder.class, databaseQuery) {
 
             @Override
-            protected void populateViewHolder(RestaurantViewHolder viewHolder, final Restaurant restaurant, int position) {
+            protected void populateViewHolder(final RestaurantViewHolder viewHolder, final Restaurant restaurant, int position) {
                 // Following configurations will be applied to whole elements in the RecyclerView
                 final DatabaseReference restaurantRef =  getRef(position);
 
-                // Set OnClickListener
                 final String restaurantKey = restaurantRef.getKey();
+
                 viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
@@ -91,47 +98,49 @@ public abstract class BaseFragment extends Fragment {
                         intent.putExtra(DetailActivity.NAME_EXTRA, restaurant.getName());
                         intent.putExtra(DetailActivity.RES_ID_EXTRA, restaurantKey);
                         intent.putExtra(DetailActivity.DATABASE_ROOT_EXTRA, getDatabaseRoot(getCityIndex()));
+                        intent.putStringArrayListExtra(DetailActivity.PHOTOS_EXTRA, (ArrayList<String>) restaurant.getPhotos());
+                        intent.putStringArrayListExtra(DetailActivity.CUISINES_EXTRA, (ArrayList<String>) restaurant.getCuisines());
                         startActivity(intent);
                     }
                 });
 
+                // If user liked any restaurants update UI accordingly
+                if (getUser() != null) {
+                    if (restaurant.getStars().containsKey(getUser().getUid())) {
+                        viewHolder.getLikeButton().setLiked(true);
+                        Log.d(TAG, "populateViewHolder: " + restaurantKey);
+                    } else {
+                        viewHolder.getLikeButton().setLiked(false);
+                    }
+                }
+
+                // Handle Favorites Fragment as well
+                MainActivity activity = (MainActivity) getActivity();
+                if (activity.getCurrentTabPosition() == 2) {
+                    viewHolder.getLikeButton().setLiked(true);
+                }
+
                 // Bind to View
-                viewHolder.bind(restaurant, new View.OnClickListener() {
-
-                    MainActivity activity = (MainActivity) getActivity();
-
-                    // Handle star click
+                viewHolder.bind(restaurant, new OnLikeListener() {
                     @Override
-                    public void onClick(View view) {
-
-                        if (getUser() == null) {
-
-                            final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-
-                            builder.setMessage("Authentication required to like the restaurants !")
-                                    .setTitle("Authenticate !");
-
-                            builder.setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    activity.onSignUpButtonClicked(null);
-                                }
-                            });
-
-                            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    // do nothing
-                                }
-                            });
-                            builder.create().show();
-                            activity.selectTabAt(2);
-
+                    public void liked(LikeButton likeButton) {
+                        if (getUser() != null) {
+                            // handle like here, update the database
+                            mRootReference.child("favorites").child(getUser().getUid()).child(restaurantKey).setValue(restaurant);
+                            restaurant.getStars().put(getUser().getUid(), true);
+                            // update the restaurant_reference
+                            mRootReference.child(getDatabaseRoot(getCityIndex())).child(restaurantKey).setValue(restaurant);
                         } else {
-                            Log.d(TAG, "onClick: User is authenticated, handle favorites!");
-                            mRootReference.child("/favorites/").child(getUser().getUid()).child(restaurantKey).setValue(restaurant);
-                            Toast.makeText(getContext(), "Added to Favorites", Toast.LENGTH_SHORT).show();
+                            popDialog();
                         }
+                    }
+
+                    @Override
+                    public void unLiked(LikeButton likeButton) {
+                        // if user can unlike the button, this means user is already authenticated
+                        mRootReference.child("favorites").child(getUser().getUid()).child(restaurantKey).removeValue();
+                        restaurant.getStars().remove(getUser().getUid());
+                        mRootReference.child(getDatabaseRoot(getCityIndex())).child(restaurantKey).setValue(restaurant);
                     }
                 });
 
@@ -139,12 +148,37 @@ public abstract class BaseFragment extends Fragment {
                 mProgressBar.setVisibility(View.INVISIBLE);
                 mFavMessageView.setVisibility(View.INVISIBLE);
                 mSignUpButton.setVisibility(View.INVISIBLE);
+
             }
 
         };
 
         mRecyclerView.setAdapter(mFirebaseAdapter);
 
+    }
+
+    /**
+     * Pop a dialog if the user clicked like button without authentication
+     */
+    private void popDialog() {
+        final MainActivity activity = (MainActivity) getActivity();
+        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setMessage("Authentication required to like the restaurants !")
+                .setTitle("Authenticate !");
+        builder.setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                activity.onSignUpButtonClicked(null);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                // do nothing
+            }
+        });
+        builder.create().show();
+        activity.selectTabAt(2);
     }
 
     public int getCityIndex() {
@@ -156,6 +190,8 @@ public abstract class BaseFragment extends Fragment {
         switch (index) {
             case 0:
                 return "new-york-city";
+            case 1:
+                return "istanbul";
             default:
                 return "new-york-city";
         }

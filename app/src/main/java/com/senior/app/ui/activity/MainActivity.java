@@ -225,26 +225,25 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
             // Select the fav tab
             selectTabAt(2);
             // if previous index is not nearby, log the city
-            logCityIndex(favIndex, nearbyIndex);
         } else if (pos == nearbyIndex) {
             // Select the nearby tab
             selectTabAt(1);
             // if previous index is not fav, log the city
-            logCityIndex(favIndex, nearbyIndex);
         } else {
+            lastCityIndex = pos;
             // Select the explore tab
             selectTabAt(0);
-            lastCityIndex = pos;
             // reload the fragment accordingly
-            List<Fragment> fragments = getSupportFragmentManager().getFragments();
-            for (Fragment f : fragments) {
-                if (f instanceof ExploreFragment) {
-                    mViewPager.getAdapter().notifyDataSetChanged();
-                }
-            }
+            mViewPager.getAdapter().notifyDataSetChanged();
         }
         // set current spinner index
         setSpinnerIndex(pos);
+    }
+
+
+    @Override
+    public void onNothingSelected(AdapterView<?> adapterView) {
+        // do nothing
     }
 
     private void setSpinnerIndex(int index) {
@@ -255,12 +254,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         return lastCityIndex;
     }
 
-    private void logCityIndex(int favIndex, int nearbyIndex) {
-        if (currentSpinnerIndex != favIndex && currentSpinnerIndex != nearbyIndex) {
-            lastCityIndex = currentSpinnerIndex;
-        }
-    }
-
     public void selectTabAt(int pos) {
         TabLayout.Tab tab = mTabLayout.getTabAt(pos);
         if (tab != null) {
@@ -268,9 +261,8 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         }
     }
 
-    @Override
-    public void onNothingSelected(AdapterView<?> adapterView) {
-        Log.d(TAG, "onNothingSelected: Nothing Selected");
+    public int getCurrentTabPosition() {
+        return mTabLayout.getSelectedTabPosition();
     }
 
     /**
@@ -301,6 +293,11 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     @Override
     public void onTabUnselected(TabLayout.Tab tab) {
         // do nothing
+        int position = tab.getPosition();
+        if (position == 0) {
+            // log city index
+            lastCityIndex = currentSpinnerIndex;
+        }
     }
 
     @Override

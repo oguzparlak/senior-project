@@ -2,13 +2,19 @@ import scrapy
 from scrapy.item import Item
 from Crawler.items import Restaurant
 
+import sys
+
 from firebase import firebase
 
 class TripAdvisorSpider(scrapy.Spider):
     name = 'ta_spider'
-    start_urls = ['https://www.tripadvisor.com/Restaurants-g60763-New_York_City_New_York.html#EATERY_LIST_CONTENTS']
+    start_urls = ['https://www.tripadvisor.com.tr/Restaurants-g293974-Istanbul.html#EATERY_LIST_CONTENTS']
 
     def parse(self, response):
+
+        reload(sys)
+        sys.setdefaultencoding('utf-8')
+
         for item in response.css('div.shortSellDetails'):
             restaurant = Restaurant()
             title = item.css('a.property_title::text').extract_first()
@@ -113,7 +119,7 @@ class TripAdvisorSpider(scrapy.Spider):
             "specs": restaurant['specifications']
         }
 
-        res_id = database.post('/new-york-city', restaurant_data)['name']
+        res_id = database.post('/istanbul', restaurant_data)['name']
 
         # push reviews
         for review in restaurant['reviews']:

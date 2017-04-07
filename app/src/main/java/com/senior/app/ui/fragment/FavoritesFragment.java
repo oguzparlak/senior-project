@@ -6,8 +6,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 
 public class FavoritesFragment extends BaseFragment {
 
@@ -21,6 +24,7 @@ public class FavoritesFragment extends BaseFragment {
             // Hide the fav-message
             mFavMessageView.setVisibility(View.INVISIBLE);
             mSignUpButton.setVisibility(View.INVISIBLE);
+
             return reference.child("/favorites/").child(getUser().getUid());
         } else {
             // Show the fav-message

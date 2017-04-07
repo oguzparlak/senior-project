@@ -36,7 +36,6 @@
                 android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true" />
 
-
             <su.levenetc.android.badgeview.BadgeView
                 android:id="@+id/badge_view"
                 app:badgeText="4.5"
@@ -46,17 +45,18 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
-                android:layout_margin="8dp" />
+                android:layout_margin="16dp" />
 
-            <ImageView
-                android:layout_margin="8dp"
+            <com.like.LikeButton
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:layout_alignParentRight="true"
                 android:layout_gravity="end"
-                android:id="@+id/star_image_view"
-                android:layout_height="28dp"
-                android:layout_width="28dp"
-                app:srcCompat="@drawable/ic_toggle_star_outline_24" />
+                android:id="@+id/like_button"
+                app:icon_type="heart"
+                app:icon_size="20dp"
+                app:dots_primary_color="@color/colorPrimary" />
 
         </RelativeLayout>
 

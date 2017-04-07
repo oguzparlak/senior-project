@@ -1,5 +1,6 @@
 package model;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -9,6 +10,7 @@ import java.util.Map;
 
 public class Restaurant {
 
+    private String uid;
     private String name;
     private String address;
     private List<String> cuisines;
@@ -17,6 +19,7 @@ public class Restaurant {
     private String rating;
     private String reviewCount;
     private Map<String, String> specs;
+    private Map<String, Boolean> stars = new HashMap<>();
 
 
     public Restaurant(String name, String address, List<String> cuisines, List<String> photos, String phoneNumber, String rating, String reviewCount, Map<String, String> specs) {
@@ -35,6 +38,18 @@ public class Restaurant {
 
     public String getName() {
         return name;
+    }
+
+    public String getUid() {
+        return uid;
+    }
+
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
+
+    public Map<String, Boolean> getStars() {
+        return stars;
     }
 
     public String getAddress() {
