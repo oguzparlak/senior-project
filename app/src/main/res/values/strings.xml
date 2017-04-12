@@ -17,6 +17,8 @@
     <string name="search">Search</string>
     <string name="filter">Filter</string>
     <string name="sign_out">Sign Out</string>
+    <string name="rating_info_text">The rating is calculated based on the average ratings of TripAdvisor, Zomato and Google Places to provide you the accurate data.</string>
+    <string name="specs_dishes"><![CDATA[Specs & Dishes]]></string>
 
     <!-- Spinner -->
     <string-array name="city_array">
@@ -26,5 +28,10 @@
         <item name="nearby">@string/tab_section_nearby</item>
         <item name="favorites">@string/tab_section_favorites</item>
     </string-array>
+
+    <!-- Res -->
+    <string name="title_activity_maps">Map</string>
+    <string name="not_available">Not available</string>
+    <string name="average_cost">%1$d$ for 2 people</string>
 
 </resources>

@@ -351,6 +351,12 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         SharedPreferences preferences = getPreferences(Context.MODE_PRIVATE);

@@ -9,7 +9,10 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
 
         <RelativeLayout
             android:layout_width="match_parent"
@@ -17,6 +20,7 @@
 
             <com.daimajia.slider.library.SliderLayout
                 android:id="@+id/slider_layout"
+                android:background="@color/colorPrimaryDark"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
                 app:auto_cycle="false"
@@ -24,6 +28,7 @@
             </com.daimajia.slider.library.SliderLayout>
 
             <android.support.v7.widget.CardView
+                android:id="@+id/detail_activity_first_card"
                 android:layout_below="@id/slider_layout"
                 android:layout_width="match_parent"
                 android:layout_height="200dp"
@@ -36,33 +41,252 @@
                     android:layout_height="match_parent">
 
                     <TextView
-                        android:id="@+id/general_text_view"
-                        android:textStyle="bold"
-                        android:layout_margin="8dp"
+                        android:id="@+id/detail_activity_restaurant_title"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="General"
-                        android:textSize="20sp"
-                        android:textColor="@color/colorPrimary" />
+                        android:text="Midpoint"
+                        android:layout_marginTop="4dp"
+                        android:textSize="18sp"
+                        android:layout_centerHorizontal="true"/>
 
-                    <com.doodle.android.chips.ChipsView
-                        android:id="@+id/chips_view"
-                        android:layout_margin="8dp"
-                        android:layout_below="@id/general_text_view"
+                    <TextView
+                        android:id="@+id/detail_activity_restaurant_address"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:textAlignment="center"
+                        android:layout_marginTop="4dp"
+                        android:layout_centerHorizontal="true"
+                        android:text="This is a sample address placeholder text. Let's see if it can fits here, Backtown Street, No : 53, Bla bla bla"
+                        android:layout_below="@id/detail_activity_restaurant_title" />
+
+                    <LinearLayout
+                        android:layout_margin="16dp"
+                        android:orientation="horizontal"
+                        android:layout_below="@id/detail_activity_restaurant_address"
+                        android:id="@+id/detail_activity_button_holder"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                        <Button
+                            android:id="@+id/detail_activity_add_fav_button"
+                            android:layout_weight=".5"
+                            android:text="Add to Favorites"
+                            android:textSize="12sp"
+                            android:drawableLeft="@drawable/ic_favorite_white_24dp"
+                            style="@style/Widget.AppCompat.Button.Colored"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                        <Button
+                            android:id="@+id/detail_activity_post_comment_button"
+                            android:layout_weight=".5"
+                            android:text="Post Comment"
+                            android:textSize="12sp"
+                            android:drawableLeft="@drawable/ic_image_edit"
+                            style="@style/Widget.AppCompat.Button.Colored"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/detail_activity_call_button"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:cv_bg_color="@color/colorPrimary"
-                        app:cv_text_color="@android:color/white"
-                        app:cv_color="@color/colorPrimary"
-                        app:cv_icon_placeholder="@drawable/ic_restaurant_menu_white_24dp"
-                        app:cv_chips_margin="12dp"
-                        app:cv_vertical_spacing="8dp">
-
-                    </com.doodle.android.chips.ChipsView>
+                        android:layout_below="@id/detail_activity_button_holder"
+                        android:textSize="12sp"
+                        android:layout_marginLeft="16dp"
+                        android:layout_marginRight="16dp"
+                        android:text="Call"
+                        android:drawableLeft="@drawable/ic_call_white_24dp"
+                        style="@style/Widget.AppCompat.Button.Colored" />
 
                 </RelativeLayout>
 
             </android.support.v7.widget.CardView>
+
+            <android.support.v7.widget.CardView
+                android:id="@+id/detail_activity_second_card"
+                android:layout_below="@id/detail_activity_first_card"
+                android:layout_width="match_parent"
+                android:layout_height="100dp"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="8dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent">
+
+                    <su.levenetc.android.badgeview.BadgeView
+                        android:id="@+id/detail_activity_badge_view"
+                        app:badgeText="4.5"
+                        android:layout_margin="8dp"
+                        app:badgeBackgroundColor="@color/colorPrimary"
+                        app:badgeTextColor="@android:color/white"
+                        app:badgeTextSize="12sp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+
+                    <TextView
+                        android:id="@+id/detail_activity_badge_info"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_margin="8dp"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/darker_gray"
+                        android:text="@string/rating_info_text"
+                        android:layout_toRightOf="@id/detail_activity_badge_view"/>
+
+                    <Button
+                        android:id="@+id/detail_activity_see_reviews_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_badge_info"
+                        android:textSize="12sp"
+                        android:layout_marginLeft="16dp"
+                        android:layout_marginRight="16dp"
+                        android:layout_alignParentRight="true"
+                        android:text="See Reviews"
+                        style="@style/Widget.AppCompat.Button.Colored" />
+
+                </RelativeLayout>
+
+            </android.support.v7.widget.CardView>
+
+            <android.support.v7.widget.CardView
+                android:id="@+id/detail_activity_third_card"
+                android:layout_below="@id/detail_activity_second_card"
+                android:layout_width="match_parent"
+                android:layout_height="260dp"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="8dp">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_margin="8dp">
+
+                    <TextView
+                        android:id="@+id/detail_activity_call_sub_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Phone Number"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <TextView
+                        android:id="@+id/detail_activity_call_main_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_call_sub_text"
+                        android:text="@string/not_available"
+                        android:layout_marginTop="4dp"
+                        android:textSize="12sp"
+                        android:textColor="@color/colorPrimary"/>
+
+                    <TextView
+                        android:id="@+id/detail_activity_cuisines_sub_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_call_main_text"
+                        android:text="Cuisines"
+                        android:layout_marginTop="12dp"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <TextView
+                        android:id="@+id/detail_activity_cuisines_main_text"
+                        android:layout_width="200dp"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_cuisines_sub_text"
+                        android:layout_marginTop="4dp"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/detail_activity_average_price_sub_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_cuisines_main_text"
+                        android:text="Average Price"
+                        android:layout_marginTop="12dp"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <TextView
+                        android:id="@+id/detail_activity_average_price_main_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_average_price_sub_text"
+                        android:text="$140 for 2 people"
+                        android:layout_marginTop="4dp"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/detail_activity_specs"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_average_price_main_text"
+                        android:text="@string/specs_dishes"
+                        android:layout_marginTop="12dp"
+                        android:textSize="12sp"
+                        android:textColor="@android:color/darker_gray" />
+
+                    <TextView
+                        android:id="@+id/detail_activity_specs_main_text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_below="@id/detail_activity_specs"
+                        android:text="Specs goes here....."
+                        android:layout_marginTop="4dp"
+                        android:textSize="12sp" />
+
+                    <Button
+                        android:id="@+id/detail_activity_menu_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:textSize="12sp"
+                        android:layout_alignParentRight="true"
+                        android:text="See Menu on Zomato"
+                        style="@style/Widget.AppCompat.Button.Colored" />
+
+                    <Button
+                        android:id="@+id/detail_activity_photos_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:textSize="12sp"
+                        android:layout_alignParentRight="true"
+                        android:layout_below="@id/detail_activity_menu_button"
+                        android:text="See more photos"
+                        style="@style/Widget.AppCompat.Button.Colored" />
+
+                </RelativeLayout>
+
+            </android.support.v7.widget.CardView>
+
+            <android.support.v7.widget.CardView
+                android:id="@+id/detail_activity_forth_card"
+                android:layout_below="@id/detail_activity_third_card"
+                android:layout_width="match_parent"
+                android:layout_height="240dp"
+                android:layout_marginTop="8dp"
+                app:cardCornerRadius="0dp"
+                app:cardElevation="8dp">
+
+                <fragment xmlns:android="http://schemas.android.com/apk/res/android"
+                    xmlns:tools="http://schemas.android.com/tools"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:id="@+id/map"
+                    tools:context=".MapsActivity"
+                    android:name="com.google.android.gms.maps.SupportMapFragment" />
+
+            </android.support.v7.widget.CardView>
+
+
 
 
         </RelativeLayout>

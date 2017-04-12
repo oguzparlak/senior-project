@@ -97,7 +97,9 @@ public abstract class BaseFragment extends Fragment {
                         Intent intent = new Intent(getActivity(), DetailActivity.class);
                         intent.putExtra(DetailActivity.NAME_EXTRA, restaurant.getName());
                         intent.putExtra(DetailActivity.RES_ID_EXTRA, restaurantKey);
+                        intent.putExtra(DetailActivity.PHONE_NUMBER_EXTRA, restaurant.getPhoneNumber());
                         intent.putExtra(DetailActivity.DATABASE_ROOT_EXTRA, getDatabaseRoot(getCityIndex()));
+                        intent.putExtra(DetailActivity.ADDRESS_EXTRA, restaurant.getAddress());
                         intent.putStringArrayListExtra(DetailActivity.PHOTOS_EXTRA, (ArrayList<String>) restaurant.getPhotos());
                         intent.putStringArrayListExtra(DetailActivity.CUISINES_EXTRA, (ArrayList<String>) restaurant.getCuisines());
                         startActivity(intent);
@@ -108,7 +110,6 @@ public abstract class BaseFragment extends Fragment {
                 if (getUser() != null) {
                     if (restaurant.getStars().containsKey(getUser().getUid())) {
                         viewHolder.getLikeButton().setLiked(true);
-                        Log.d(TAG, "populateViewHolder: " + restaurantKey);
                     } else {
                         viewHolder.getLikeButton().setLiked(false);
                     }
