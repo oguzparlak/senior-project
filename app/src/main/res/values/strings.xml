@@ -33,5 +33,7 @@
     <string name="title_activity_maps">Map</string>
     <string name="not_available">Not available</string>
     <string name="average_cost">%1$d$ for 2 people</string>
+    <string name="add_to_fav">Add to Favorites</string>
+    <string name="dislike">Dislike</string>
 
 </resources>

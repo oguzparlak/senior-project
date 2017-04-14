@@ -61,7 +61,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
 
     private static final int PLACE_PICKER_REQUEST = 1;
     private static final int LOCATION_REQUEST = 2;
-    private static final int LOGIN_REQUEST = 3;
 
     private static final String SPINNER_INDEX = "SPINNER_INDEX";
 
@@ -146,7 +145,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         try {
             startActivityForResult(builder.build(this), PLACE_PICKER_REQUEST);
         } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
-            Log.e(TAG, "openPlacePicker: Play Services not available.");
+            Log.w(TAG, "openPlacePicker: Play Services not available.");
         }
     }
 
@@ -159,7 +158,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
             if (resultCode == RESULT_OK) {
                 // Get the data of the selected place
                 Place place = PlacePicker.getPlace(this, data);
-                Log.d(TAG, "onActivityResult: " + place.getName());
             }
         } else if (requestCode == LOGIN_REQUEST) {
             if (resultCode == RESULT_OK) {
@@ -368,16 +366,4 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
             mAuth.removeAuthStateListener(mAuthListener);
     }
 
-    /**
-     * Launch FirebaseUI Intent
-     */
-    public void onSignUpButtonClicked(View view) {
-        startActivityForResult(AuthUI.getInstance()
-                .createSignInIntentBuilder()
-                .setIsSmartLockEnabled(false)
-                .setProviders(
-                        AuthUI.EMAIL_PROVIDER,
-                        AuthUI.GOOGLE_PROVIDER)
-                .build(), LOGIN_REQUEST);
-    }
 }

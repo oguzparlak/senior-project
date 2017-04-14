@@ -1,6 +1,12 @@
 package com.senior.app.ui.activity;
 
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -10,22 +16,42 @@ import android.widget.TextView;
 import com.daimajia.slider.library.SliderLayout;
 import com.daimajia.slider.library.SliderTypes.BaseSliderView;
 import com.daimajia.slider.library.SliderTypes.DefaultSliderView;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.location.places.AutocompleteFilter;
+import com.google.android.gms.location.places.AutocompletePrediction;
+import com.google.android.gms.location.places.AutocompletePredictionBuffer;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
+import com.google.android.gms.location.places.Places;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.JsonHttpResponseHandler;
 import com.senior.app.R;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Map;
+
+import cz.msebera.android.httpclient.Header;
+import model.GoogleReview;
+import model.Restaurant;
+import utils.GooglePlacesNetworkUtils;
 
 public class DetailActivity extends BaseActivity implements OnMapReadyCallback, View.OnClickListener {
 
@@ -65,6 +91,10 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     private CameraUpdate mCameraUpdate;
 
     private String mRestaurantName;
+    private boolean userOnline;
+    private boolean userLiked;
+
+    private Restaurant mRestaurant;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,18 +114,23 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
 
         mRestaurantTitle.setText(mRestaurantName);
 
+        // Google Places Test
+        googlePlacesTest();
+
         /**
          * Cuisines
          */
-        if (cuisines.isEmpty()) {
-            mCuisinesTextView.setText(R.string.not_available);
-        } else {
-            for (String cuisine : cuisines) {
-                mCuisinesTextView.append(cuisine + ", ");
+        if (cuisines != null) {
+            if (cuisines.isEmpty()) {
+                mCuisinesTextView.setText(R.string.not_available);
+            } else {
+                for (String cuisine : cuisines) {
+                    mCuisinesTextView.append(cuisine + ", ");
+                }
+                String currentText = mCuisinesTextView.getText().toString();
+                String beautifiedText = currentText.substring(0, currentText.length() - 2);
+                mCuisinesTextView.setText(beautifiedText);
             }
-            String currentText = mCuisinesTextView.getText().toString();
-            String beautifiedText = currentText.substring(0, currentText.length() - 2);
-            mCuisinesTextView.setText(beautifiedText);
         }
 
         /**
@@ -131,7 +166,21 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         mOrigin.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                Log.d(TAG, "onDataChange: Origin: " + dataSnapshot.toString());
+                mRestaurant = dataSnapshot.getValue(Restaurant.class);
+                /**
+                 * if the user is liked the restaurant set
+                 * like button appearance and functionality accordingly
+                 */
+                if (getCurrentUser() != null) {
+                    userOnline = true;
+                    if (mRestaurant.getStars().containsKey(getCurrentUser().getUid())) {
+                        updateLikeButton(true);
+                    } else {
+                        updateLikeButton(false);
+                    }
+                } else {
+                    userOnline = false;
+                }
             }
 
             @Override
@@ -140,6 +189,20 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
             }
         });
 
+    }
+
+    private void updateLikeButton(boolean liked) {
+        if (liked) {
+            mFavButton.setText(R.string.dislike);
+            Drawable drawable = getResources().getDrawable(R.drawable.ic_cancel_white_24dp);
+            mFavButton.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
+            userLiked = true;
+        } else {
+            mFavButton.setText(R.string.add_to_fav);
+            Drawable drawable = getResources().getDrawable(R.drawable.ic_favorite_white_24dp);
+            mFavButton.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
+            userLiked = false;
+        }
     }
 
     private void initializeView() {
@@ -156,6 +219,10 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         mSpecsTextView = (TextView) findViewById(R.id.detail_activity_specs_main_text);
         mRestaurantTitle = (TextView) findViewById(R.id.detail_activity_restaurant_title);
         mRestaurantAddress = (TextView) findViewById(R.id.detail_activity_restaurant_address);
+
+        // Set OnClickListener
+        mCallButton.setOnClickListener(this);
+        mFavButton.setOnClickListener(this);
     }
 
     @Override
@@ -191,6 +258,13 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                     mAveragePriceTextView.setText(getString(R.string.average_cost, averageCost));
                     String address = (String) locationMap.get("address");
                     mRestaurantAddress.setText(address);
+                    String thumb = (String) restaurantMap.get("thumb");
+                    DefaultSliderView sliderView = new DefaultSliderView(getBaseContext());
+                    sliderView
+                            .image(thumb)
+                            .setScaleType(BaseSliderView.ScaleType.CenterCrop);
+                    mSliderLayout.addSlider(sliderView);
+
                 } else {
                     mAveragePriceTextView.setText(R.string.not_available);
                     String address = getIntent().getStringExtra(ADDRESS_EXTRA);
@@ -218,9 +292,131 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     public void onClick(View view) {
         int id = view.getId();
         if (id == R.id.detail_activity_add_fav_button) {
+            String res_id = getIntent().getStringExtra(RES_ID_EXTRA);
             // add the current res to favs, if the user is authenticated
+            if (!userOnline) {
+                // dialog
+                popDialog();
+                return;
+            }
+            if (!userLiked) {
+                // like the restaurant
+                mRestaurant.getStars().put(getCurrentUser().getUid(), true);
+                mOrigin.setValue(mRestaurant);
+                getFavoritesReference().child(res_id).setValue(mRestaurant);
+                updateLikeButton(true);
+            } else {
+                // remove from favorites
+                mRestaurant.getStars().remove(getCurrentUser().getUid());
+                getFavoritesReference().child(res_id).removeValue();
+                mOrigin.setValue(mRestaurant);
+                updateLikeButton(false);
+            }
         } else if (id == R.id.detail_activity_post_comment_button) {
             // intent to comment
+        } else if (id == R.id.detail_activity_call_button) {
+            Intent callIntent = new Intent(Intent.ACTION_DIAL);
+            callIntent.setData(Uri.parse("tel:" + mPhoneNumberTextView.getText()));
+            startActivity(callIntent);
         }
+    }
+
+    private void popDialog() {
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Authentication required to like the restaurants !")
+                .setTitle("Authenticate !");
+        builder.setPositiveButton("Sign in", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                onSignUpButtonClicked(null);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                // do nothing
+            }
+        });
+        builder.create().show();
+    }
+
+    private void googlePlacesTest() {
+        AutocompleteFilter filter = new AutocompleteFilter
+                .Builder()
+                .setCountry("US")
+                .setTypeFilter(AutocompleteFilter.TYPE_FILTER_ESTABLISHMENT)
+                .build();
+
+        // New York City South-West, North-East
+        LatLngBounds bounds = new LatLngBounds(new LatLng(40.323663772, -73.989829374),
+                new LatLng(40.723663772, -73.489829374));
+
+        PendingResult<AutocompletePredictionBuffer> result =
+                Places
+                        .GeoDataApi
+                        .getAutocompletePredictions(mGoogleApiClient, mRestaurantName, bounds, filter);
+
+        result.setResultCallback(new ResultCallback<AutocompletePredictionBuffer>() {
+            @Override
+            public void onResult(@NonNull AutocompletePredictionBuffer buffer) {
+                if (buffer.getCount() > 0) {
+                    AutocompletePrediction prediction = buffer.get(0);
+                    String placeId = prediction.getPlaceId();
+                    // Try to make another API call here
+                    Places.GeoDataApi.getPlaceById(mGoogleApiClient, placeId).setResultCallback(new ResultCallback<PlaceBuffer>() {
+                        @Override
+                        public void onResult(@NonNull PlaceBuffer places) {
+                            if (places.getStatus().isSuccess() && places.getCount() > 0) {
+                                Place place = places.get(0);
+                                String placeId = place.getId();
+                                GooglePlacesNetworkUtils.get(placeId, new JsonHttpResponseHandler() {
+                                    @Override
+                                    public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                                        try {
+                                            JSONObject result = response.getJSONObject("result");
+                                            JSONObject openingHours = result.getJSONObject("opening_hours");
+                                            JSONArray weekDayText = openingHours.getJSONArray("weekday_text");
+                                            JSONArray reviews = result.getJSONArray("reviews");
+                                            // Restaurant additional info
+                                            boolean openNow = openingHours.getBoolean("open_now");
+                                            String[] weekDay = new String[weekDayText.length()];
+                                            for (int i = 0; i < weekDay.length; i++) {
+                                                weekDay[i] = (String) weekDayText.get(i);
+                                            }
+                                            double rating = result.getDouble("rating");
+                                            // Reviews
+                                            for (int i = 0; i < reviews.length(); i++) {
+                                                JSONObject review = reviews.getJSONObject(i);
+                                                String author = review.getString("author_name");
+                                                double reviewRating = review.getDouble("rating");
+                                                String timeDescription = review.getString("relative_time_description");
+                                                String text = review.getString("text");
+                                                GoogleReview googleReview = new GoogleReview(author, reviewRating, timeDescription, text);
+                                                Log.d(TAG, "onSuccess: Text: " + googleReview.getText());
+                                            }
+                                        } catch (JSONException e) {
+                                            e.printStackTrace();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onFailure(int statusCode, Header[] headers, String responseString, Throwable throwable) {
+                                        Log.w(TAG, "onFailure: Failed with status code: " + statusCode);
+                                    }
+                                });
+                            } else {
+                                Log.w(TAG, "onResult: Place not found.");
+                            }
+                            places.release();
+                        }
+                    });
+                } else {
+                    Log.w(TAG, "onResult: Place not found.");
+                }
+                buffer.release();
+            }
+        });
+
+
     }
 }
