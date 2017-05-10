@@ -1,5 +1,6 @@
 package model;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,7 +9,7 @@ import java.util.Map;
  * Created by Oguz on 21/02/2017.
  */
 
-public class Restaurant {
+public class Restaurant implements Serializable {
 
     private String uid;
     private String name;
@@ -20,7 +21,6 @@ public class Restaurant {
     private String reviewCount;
     private Map<String, String> specs;
     private Map<String, Boolean> stars = new HashMap<>();
-
 
     public Restaurant(String name, String address, List<String> cuisines, List<String> photos, String phoneNumber, String rating, String reviewCount, Map<String, String> specs) {
         this.name = name;

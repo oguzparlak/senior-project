@@ -34,9 +34,13 @@ public class RestaurantViewHolder extends RecyclerView.ViewHolder {
 
     public void bind(Restaurant restaurant, OnLikeListener onLikeListener) {
         if (restaurant.getPhotos().isEmpty()) {
-            mThumbImage.setImageResource(R.mipmap.ic_launcher);
+            mThumbImage.setImageResource(R.drawable.ic_launcher);
         } else {
-            Picasso.with(itemView.getContext()).load(restaurant.getPhotos().get(0)).into(mThumbImage);
+            String thumb = restaurant.getPhotos().get(0);
+            if (thumb.length() > 0)
+                Picasso.with(itemView.getContext()).load(restaurant.getPhotos().get(0)).into(mThumbImage);
+            else
+                mThumbImage.setImageResource(R.drawable.ic_launcher);
         }
         mRestaurantTitle.setText(restaurant.getName().replace("\n", "").replace("\r", ""));
         mLikeButton.setOnLikeListener(onLikeListener);

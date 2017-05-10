@@ -1,26 +1,50 @@
-<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android"
-package="com.senior.app">
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.senior.app">
 
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
-<application android:allowBackup="true" android:icon="@drawable/ic_launcher" android:label="@string/app_name"
-    android:supportsRtl="true" android:theme="@style/AppTheme" android:name="utils.App">
-    <activity android:name=".ui.activity.MainActivity" android:label="@string/app_name"
-        android:theme="@style/AppTheme.NoActionBar">
-        <intent-filter>
-            <action android:name="android.intent.action.MAIN" />
+    <application
+        android:name="utils.App"
+        android:allowBackup="true"
+        android:icon="@drawable/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".ui.activity.MainActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
 
-            <category android:name="android.intent.category.LAUNCHER" />
-        </intent-filter>
-    </activity>
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
-    <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyDR3uskt9wsfmIWacF0Xis8sfIOYZ9waoI" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDR3uskt9wsfmIWacF0Xis8sfIOYZ9waoI" />
 
-    <activity android:name=".ui.activity.DetailActivity"
-        android:parentActivityName=".ui.activity.MainActivity" />
-    <meta-data android:name="android.support.PARENT_ACTIVITY" android:value=".ui.activity.MainActivity" />
-</application>
+        <activity
+            android:name=".ui.activity.DetailActivity"
+            android:parentActivityName=".ui.activity.MainActivity" />
+
+        <meta-data
+            android:name="android.support.PARENT_ACTIVITY"
+            android:value=".ui.activity.MainActivity" />
+
+        <activity
+            android:name=".ui.activity.ReviewActivity"
+            android:label="@string/title_activity_review"
+            android:parentActivityName=".ui.activity.DetailActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.senior.app.ui.activity.DetailActivity" />
+        </activity>
+    </application>
 
 </manifest>

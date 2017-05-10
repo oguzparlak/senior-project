@@ -61,10 +61,6 @@ public abstract class BaseFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Prevent re-creation objects when orientation changes
-        // This will save time when Network Operations to be handled
-        // setRetainInstance(true);
     }
 
     @Override
@@ -102,6 +98,7 @@ public abstract class BaseFragment extends Fragment {
                         intent.putExtra(DetailActivity.ADDRESS_EXTRA, restaurant.getAddress());
                         intent.putStringArrayListExtra(DetailActivity.PHOTOS_EXTRA, (ArrayList<String>) restaurant.getPhotos());
                         intent.putStringArrayListExtra(DetailActivity.CUISINES_EXTRA, (ArrayList<String>) restaurant.getCuisines());
+                        intent.putExtra(DetailActivity.RESTAURANT_EXTRA, restaurant);
                         startActivity(intent);
                     }
                 });

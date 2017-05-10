@@ -45,6 +45,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import cz.msebera.android.httpclient.Header;
@@ -74,7 +75,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     // Spinner
     private Spinner mSpinner;
 
-    private FloatingActionButton mLocationFab;
+    private boolean firstNearbyCall = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +116,17 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     }
 
     @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        MenuItem refresh = menu.findItem(R.id.action_search);
+        if (inNearbyTab()) {
+            refresh.setIcon(R.drawable.quantum_ic_refresh_white_24);
+        } else {
+            refresh.setIcon(R.drawable.ic_search_white_24dp);
+        }
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
@@ -125,16 +137,26 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         if (id == R.id.action_settings) {
             return true;
         } else if (id == R.id.action_search) {
-            openPlacePicker();
+            if (inNearbyTab()) {
+                // make a new API call with Zomato
+                makeAsyncHttpCall();
+            } else {
+                // Open the search UI
+            }
             return true;
         } else if (id == R.id.action_sign_out) {
             FirebaseAuth.getInstance().signOut();
+            firstNearbyCall = true;
             Toast.makeText(this, "Signed-out", Toast.LENGTH_LONG).show();
             selectTabAt(0);
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private boolean inNearbyTab() {
+        return getCurrentTabPosition() == 1;
     }
 
     /**
@@ -201,15 +223,6 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         mSpinner.setAdapter(adapter);
 
         mSpinner.setOnItemSelectedListener(this);
-
-        mLocationFab = (FloatingActionButton) findViewById(R.id.fab);
-        mLocationFab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // Refresh the data anytime mLocationFab is tapped
-                pushLocationData();
-            }
-        });
     }
 
     /**
@@ -272,6 +285,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         int currentPosition = tab.getPosition();
         int favIndex = mSpinner.getAdapter().getCount() - 1;
         int nearbyIndex = favIndex - 1;
+        supportInvalidateOptionsMenu();
         switch (currentPosition) {
             case 0:
                 // set selection to last saved city index
@@ -279,6 +293,10 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
                 break;
             case 1:
                 mSpinner.setSelection(nearbyIndex);
+                if (firstNearbyCall) {
+                    makeAsyncHttpCall();
+                    firstNearbyCall = false;
+                }
                 break;
             case 2:
                 mSpinner.setSelection(favIndex);
@@ -303,7 +321,10 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         // do nothing
     }
 
-    private void pushLocationData() {
+    /**
+     * Get the lat, lng
+     */
+    private Location getLastLocation() {
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -313,12 +334,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
 
         }
 
-        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (location != null) {
-            Log.d(TAG, "pushLocationData: Lat: " + location.getLatitude());
-            Log.d(TAG, "pushLocationData: Lng: " + location.getLongitude());
-        }
-
+        return LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
     }
 
     // Handle location results here
@@ -329,7 +345,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-                    pushLocationData();
+                    makeAsyncHttpCall();
 
                 } else {
                     // permission denied, show toast
@@ -339,6 +355,53 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
                 }
             }
         }
+    }
+
+    /**
+     * Make HTTP call with ZomatoAPI
+     */
+    private void makeAsyncHttpCall() {
+        Location location = getLastLocation();
+        if (location != null) {
+            String url = ZomatoNetworkUtils.buildURL(location.getLatitude(), location.getLongitude());
+            ZomatoNetworkUtils.get(url, null, new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
+                    // remove all values first
+                    if (userLoggedIn())
+                        mRootReference.child("/nearby").child(getCurrentUser().getUid()).removeValue();
+                    try {
+                        JSONArray restaurantsArray = response.getJSONArray("restaurants");
+                        for (int i = 0; i < restaurantsArray.length(); i++) {
+                            JSONObject restaurant = restaurantsArray.getJSONObject(i);
+                            JSONObject restaurantJson = restaurant.getJSONObject("restaurant");
+                            String name = restaurantJson.getString("name");
+                            JSONObject rating = restaurantJson.getJSONObject("user_rating");
+                            String aggregateRating = rating.getString("aggregate_rating");
+                            String thumb = restaurantJson.getString("thumb");
+                            String id = restaurantJson.getString("id");
+                            List<String> photos = new ArrayList<>();
+                            photos.add(thumb);
+                            Restaurant res = new Restaurant(name, null, null, photos, null, aggregateRating, null, null);
+                            if (userLoggedIn()) {
+                                mRootReference.child("/nearby").child(getCurrentUser().getUid()).child(id).setValue(res);
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                    Log.w(TAG, "onFailure: Failed with statusCode: " + statusCode);
+                }
+            });
+        }
+    }
+
+    private boolean userLoggedIn() {
+        return getCurrentUser() != null;
     }
 
     @Override

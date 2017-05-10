@@ -35,5 +35,13 @@
     <string name="average_cost">%1$d$ for 2 people</string>
     <string name="add_to_fav">Add to Favorites</string>
     <string name="dislike">Dislike</string>
+    <string name="open_now">Open now</string>
+    <string name="closed">Closed</string>
+    <string name="opening_hours">Opening Hours</string>
+    <string name="title_activity_review">ReviewActivity</string>
+    <string name="reviews">Reviews</string>
+    <string name="add_review">Add Review</string>
+    <string name="post">Post</string>
+    <string name="comment">Comment</string>
 
 </resources>

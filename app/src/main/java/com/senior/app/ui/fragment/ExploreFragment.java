@@ -25,7 +25,7 @@ public class ExploreFragment extends BaseFragment {
     @Override
     Query getQuery(DatabaseReference reference) {
         int cityIndex = getCityIndex();
-        return reference.child(getDatabaseRoot(cityIndex)).orderByChild("rating").limitToFirst(50);
+        return reference.child(getDatabaseRoot(cityIndex)).orderByChild("reviewCount").limitToFirst(100);
     }
 
 }

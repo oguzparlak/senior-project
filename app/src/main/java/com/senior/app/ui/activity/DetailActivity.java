@@ -1,16 +1,23 @@
 package com.senior.app.ui.activity;
 
+import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.CardView;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import com.daimajia.slider.library.SliderLayout;
@@ -37,7 +44,6 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.senior.app.R;
 
@@ -45,11 +51,14 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import cz.msebera.android.httpclient.Header;
-import model.GoogleReview;
+import model.Review;
 import model.Restaurant;
 import utils.GooglePlacesNetworkUtils;
 
@@ -65,10 +74,14 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     public static String CUISINES_EXTRA = "CUISINES_EXTRA";
     public static String PHONE_NUMBER_EXTRA = "PHONE_NUMBER_EXTRA";
     public static String ADDRESS_EXTRA = "ADDRESS_EXTRA";
+    public static String RESTAURANT_EXTRA = "RESTAURANT_EXTRA";
 
     // Firebase Database
     private DatabaseReference mOrigin;
     private DatabaseReference mZomato;
+    private DatabaseReference mZomatoReviews;
+    private DatabaseReference mTripAdvisorReviews;
+    private DatabaseReference mInternalReviews;
 
     // UI Components
     private SliderLayout mSliderLayout;
@@ -85,16 +98,22 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     private TextView mCuisinesTextView;
     private TextView mAveragePriceTextView;
     private TextView mSpecsTextView;
+    private TextView mOpenNowTextView;
+    private TextView mOpeningHoursTextView;
+
+    private CardView mOpeningHoursCard;
 
     // Google Map
     private GoogleMap mGoogleMap;
     private CameraUpdate mCameraUpdate;
 
     private String mRestaurantName;
+    private String resId;
     private boolean userOnline;
     private boolean userLiked;
 
     private Restaurant mRestaurant;
+    private List<Review> mReviews;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,7 +125,7 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         initializeView();
 
         mRestaurantName = getIntent().getStringExtra(NAME_EXTRA).replace("\n", "").replace("\r", "");
-        String resId = getIntent().getStringExtra(RES_ID_EXTRA);
+        resId = getIntent().getStringExtra(RES_ID_EXTRA);
         String databaseRoot = getIntent().getStringExtra(DATABASE_ROOT_EXTRA);
         String phoneNumber = getIntent().getStringExtra(PHONE_NUMBER_EXTRA);
         ArrayList<String> photos = getIntent().getStringArrayListExtra(PHOTOS_EXTRA);
@@ -114,8 +133,8 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
 
         mRestaurantTitle.setText(mRestaurantName);
 
-        // Google Places Test
-        googlePlacesTest();
+        // Google Places API Call
+        makeGoogleAPICall();
 
         /**
          * Cuisines
@@ -158,28 +177,42 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-        // Firebase Test
+        // Firebase References
         mOrigin = FirebaseDatabase.getInstance().getReference(databaseRoot).child(resId);
         mZomato = FirebaseDatabase.getInstance().getReference("nyc-zomato-external").child(resId);
+        mZomatoReviews = FirebaseDatabase.getInstance().getReference("nyc-zomato-reviews").child(resId);
+        mTripAdvisorReviews = FirebaseDatabase.getInstance().getReference("reviews").child(resId);
+        mInternalReviews = mRootReference.child("internal-reviews");
 
-        // Read the data
-        mOrigin.addListenerForSingleValueEvent(new ValueEventListener() {
+        mRestaurant = (Restaurant) getIntent().getSerializableExtra(RESTAURANT_EXTRA);
+        if (getCurrentUser() != null) {
+            userOnline = true;
+            if (mRestaurant.getStars().containsKey(getCurrentUser().getUid())) {
+                updateLikeButton(true);
+            } else {
+                updateLikeButton(false);
+            }
+        } else {
+            userOnline = false;
+        }
+
+        mReviews = new ArrayList<>();
+
+        mZomatoReviews.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                mRestaurant = dataSnapshot.getValue(Restaurant.class);
-                /**
-                 * if the user is liked the restaurant set
-                 * like button appearance and functionality accordingly
-                 */
-                if (getCurrentUser() != null) {
-                    userOnline = true;
-                    if (mRestaurant.getStars().containsKey(getCurrentUser().getUid())) {
-                        updateLikeButton(true);
-                    } else {
-                        updateLikeButton(false);
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        // Store the review information
+                        Map reviewMap = (Map) snapshot.getValue();
+                        String text = (String) reviewMap.get("review_text");
+                        String timeDescription = (String) reviewMap.get("review_time_friendly");
+                        Number rating = (Number) reviewMap.get("rating");
+                        Map userMap = (Map) reviewMap.get("user");
+                        String username = (String) userMap.get("name");
+                        Review review = new Review("Zomato", username, rating.doubleValue(), timeDescription, text);
+                        mReviews.add(review);
                     }
-                } else {
-                    userOnline = false;
                 }
             }
 
@@ -189,6 +222,49 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
             }
         });
 
+        mTripAdvisorReviews.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.exists()) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        Map reviewMap = (Map) snapshot.getValue();
+                        String text = (String) reviewMap.get("entry");
+                        String provider = (String) reviewMap.get("provider");
+                        String username = (String) reviewMap.get("user_name");
+                        Review review = new Review(provider, username, -1, "Unknown", text);
+                        mReviews.add(review);
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        if (getCurrentUser() != null) {
+            mInternalReviews.child(getCurrentUser().getUid()).child(resId).addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.exists()) {
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            Review review = snapshot.getValue(Review.class);
+                            mReviews.add(review);
+                        }
+                    } else {
+                        Log.w(TAG, "onDataChange: Snapshot does not exists");
+                    }
+
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+        }
     }
 
     private void updateLikeButton(boolean liked) {
@@ -219,10 +295,15 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         mSpecsTextView = (TextView) findViewById(R.id.detail_activity_specs_main_text);
         mRestaurantTitle = (TextView) findViewById(R.id.detail_activity_restaurant_title);
         mRestaurantAddress = (TextView) findViewById(R.id.detail_activity_restaurant_address);
+        mOpenNowTextView = (TextView) findViewById(R.id.detail_activity_open_now);
+        mOpeningHoursTextView = (TextView) findViewById(R.id.detail_activity_opening_hours);
+        mOpeningHoursCard = (CardView) findViewById(R.id.detail_activity_fifth_card);
 
         // Set OnClickListener
         mCallButton.setOnClickListener(this);
         mFavButton.setOnClickListener(this);
+        mSeeReviewsButton.setOnClickListener(this);
+        mCommentButton.setOnClickListener(this);
     }
 
     @Override
@@ -260,11 +341,12 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                     mRestaurantAddress.setText(address);
                     String thumb = (String) restaurantMap.get("thumb");
                     DefaultSliderView sliderView = new DefaultSliderView(getBaseContext());
-                    sliderView
-                            .image(thumb)
-                            .setScaleType(BaseSliderView.ScaleType.CenterCrop);
-                    mSliderLayout.addSlider(sliderView);
-
+                    if (thumb.length() > 1) {
+                        sliderView
+                                .image(thumb)
+                                .setScaleType(BaseSliderView.ScaleType.CenterCrop);
+                        mSliderLayout.addSlider(sliderView);
+                    }
                 } else {
                     mAveragePriceTextView.setText(R.string.not_available);
                     String address = getIntent().getStringExtra(ADDRESS_EXTRA);
@@ -283,6 +365,16 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     protected void onPause() {
         super.onPause();
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+    }
+
+    private void updateOpenNowText(boolean open) {
+        if (open) {
+            mOpenNowTextView.setText(getResources().getString(R.string.open_now));
+            mOpenNowTextView.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+        } else {
+            mOpenNowTextView.setText(getResources().getString(R.string.closed));
+            mOpenNowTextView.setTextColor(getResources().getColor(R.color.colorPrimary));
+        }
     }
 
     /**
@@ -313,7 +405,13 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                 updateLikeButton(false);
             }
         } else if (id == R.id.detail_activity_post_comment_button) {
-            // intent to comment
+            // pop a dialog for the comment
+            buildCommentDialog();
+        }else if (id == R.id.detail_activity_see_reviews_button) {
+            Intent reviewIntent = new Intent(this, ReviewActivity.class);
+            reviewIntent.putExtra(ReviewActivity.REVIEWS_EXTRA, (Serializable) mReviews);
+            reviewIntent.putExtra(ReviewActivity.THUMB_EXTRA, mRestaurant.getPhotos().get(0));
+            startActivity(reviewIntent);
         } else if (id == R.id.detail_activity_call_button) {
             Intent callIntent = new Intent(Intent.ACTION_DIAL);
             callIntent.setData(Uri.parse("tel:" + mPhoneNumberTextView.getText()));
@@ -340,7 +438,40 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         builder.create().show();
     }
 
-    private void googlePlacesTest() {
+    private void buildCommentDialog() {
+        Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.add_comment_dialog);
+        dialog.setTitle("Add Comment");
+        // onClick
+        final Button postButton = (Button) dialog.findViewById(R.id.post_button);
+        final EditText commentEditText = (EditText) dialog.findViewById(R.id.comment_edit_text);
+        final RadioGroup radioGroup = (RadioGroup) dialog.findViewById(R.id.rating_radio_group);
+        postButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String comment = commentEditText.getText().toString();
+                double rating = Double.parseDouble((String) radioGroup.findViewById(radioGroup.getCheckedRadioButtonId()).getTag());
+                String author = getCurrentUser().getDisplayName();
+                String provider = "Restaurants";
+                String date = new Date().toString();
+                Review review = new Review(provider, author, rating, date, comment);
+                mReviews.add(review);
+                mInternalReviews.child(getCurrentUser().getUid()).child(resId).push().setValue(review);
+                // TODO Handle the Date format // FIXME: 10/05/2017
+            }
+        });
+        radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(RadioGroup radioGroup, @IdRes int i) {
+                postButton.setEnabled(true);
+                double rating = Double.parseDouble((String) radioGroup.findViewById(i).getTag());
+                Log.d(TAG, "onCheckedChanged: rating: " + rating);
+            }
+        });
+        dialog.show();
+    }
+
+    private void makeGoogleAPICall() {
         AutocompleteFilter filter = new AutocompleteFilter
                 .Builder()
                 .setCountry("US")
@@ -382,8 +513,8 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                                             String[] weekDay = new String[weekDayText.length()];
                                             for (int i = 0; i < weekDay.length; i++) {
                                                 weekDay[i] = (String) weekDayText.get(i);
+                                                mOpeningHoursTextView.append(weekDay[i] + "\n\n");
                                             }
-                                            double rating = result.getDouble("rating");
                                             // Reviews
                                             for (int i = 0; i < reviews.length(); i++) {
                                                 JSONObject review = reviews.getJSONObject(i);
@@ -391,9 +522,10 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                                                 double reviewRating = review.getDouble("rating");
                                                 String timeDescription = review.getString("relative_time_description");
                                                 String text = review.getString("text");
-                                                GoogleReview googleReview = new GoogleReview(author, reviewRating, timeDescription, text);
-                                                Log.d(TAG, "onSuccess: Text: " + googleReview.getText());
+                                                Review googleReview = new Review("Google", author, reviewRating, timeDescription, text);
+                                                mReviews.add(googleReview);
                                             }
+                                            updateOpenNowText(openNow);
                                         } catch (JSONException e) {
                                             e.printStackTrace();
                                         }
@@ -406,17 +538,17 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                                 });
                             } else {
                                 Log.w(TAG, "onResult: Place not found.");
+                                mOpeningHoursCard.setVisibility(View.INVISIBLE);
                             }
                             places.release();
                         }
                     });
                 } else {
                     Log.w(TAG, "onResult: Place not found.");
+                    mOpeningHoursCard.setVisibility(View.INVISIBLE);
                 }
                 buffer.release();
             }
         });
-
-
     }
 }
