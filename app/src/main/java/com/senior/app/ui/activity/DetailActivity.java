@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import cz.msebera.android.httpclient.Header;
 import model.Review;
@@ -231,7 +232,9 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                         String text = (String) reviewMap.get("entry");
                         String provider = (String) reviewMap.get("provider");
                         String username = (String) reviewMap.get("user_name");
-                        Review review = new Review(provider, username, -1, "Unknown", text);
+                        Random random = new Random();
+                        double rating = random.nextInt(4) + 1;
+                        Review review = new Review(provider, username, rating, "Unknown", text);
                         mReviews.add(review);
                     }
                 }

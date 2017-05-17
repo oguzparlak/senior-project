@@ -23,9 +23,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.arlib.floatingsearchview.FloatingSearchView;
 import com.firebase.ui.auth.AuthUI;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
@@ -35,10 +37,15 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.Query;
+import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.senior.app.R;
 import com.senior.app.ui.adapter.TabSectionsAdapter;
+import com.senior.app.ui.fragment.BaseFragment;
 import com.senior.app.ui.fragment.ExploreFragment;
 
 import org.json.JSONArray;
@@ -108,10 +115,51 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
 
     }
 
+    private Restaurant getRestaurant(final String query) {
+        return null;
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+
+        // TODO Handle search, Firebase queries are extremely slow!
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(final String query) {
+                mRootReference.child("new-york-city").orderByChild("rating")
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(DataSnapshot dataSnapshot) {
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            Restaurant restaurant = snapshot.getValue(Restaurant.class);
+                            if (restaurant.getName().equals("\nFlavors\n")) {
+                                Log.d(TAG, "onDataChange: restaurant: " + restaurant.getName());
+                                break;
+                            }
+
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(DatabaseError databaseError) {
+
+                    }
+                });
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
+
         return true;
     }
 
@@ -223,6 +271,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         mSpinner.setAdapter(adapter);
 
         mSpinner.setOnItemSelectedListener(this);
+
     }
 
     /**

@@ -8,7 +8,7 @@ from firebase import firebase
 
 class TripAdvisorSpider(scrapy.Spider):
     name = 'ta_spider'
-    start_urls = ['https://www.tripadvisor.com.tr/Restaurants-g293974-Istanbul.html#EATERY_LIST_CONTENTS']
+    start_urls = ['https://www.tripadvisor.com.tr/Restaurants-g186338-London_England.html']
 
     def parse(self, response):
 
@@ -81,7 +81,7 @@ class TripAdvisorSpider(scrapy.Spider):
         
         #Parse Photo URLS
         photo_href = response.css('div.flexible_photo_cell.hoverHighlight.restaurant_first a::attr(href)').extract_first()
-        photo_url = 'https://www.tripadvisor.com' + photo_href
+        photo_url = 'https://www.tripadvisor.com' + str(photo_href)
 
         photos = scrapy.Request(photo_url, callback=self.parse_images, meta={'item' : restaurant})
         yield photos
@@ -119,7 +119,7 @@ class TripAdvisorSpider(scrapy.Spider):
             "specs": restaurant['specifications']
         }
 
-        res_id = database.post('/istanbul', restaurant_data)['name']
+        res_id = database.post('/london', restaurant_data)['name']
 
         # push reviews
         for review in restaurant['reviews']:

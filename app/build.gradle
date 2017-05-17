@@ -55,6 +55,7 @@ dependencies {
     compile 'org.apache.airavata:airavata-levenshtein-distance-service:0.11'
     compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     compile 'com.github.kanytu:android-parallax-recyclerview:v1.7'
+    compile 'com.github.arimorty:floatingsearchview:2.0.2'
     testCompile 'junit:junit:4.12'
 }
 
