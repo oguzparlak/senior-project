@@ -40,11 +40,21 @@
             android:name=".ui.activity.ReviewActivity"
             android:label="@string/title_activity_review"
             android:parentActivityName=".ui.activity.DetailActivity"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.senior.app.ui.activity.DetailActivity" />
         </activity>
+
+        <activity android:name=".ui.activity.SearchActivity"
+            android:parentActivityName=".ui.activity.MainActivity">
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.activity.MainActivity"/>
+
+        </activity>
+
     </application>
 
 </manifest>

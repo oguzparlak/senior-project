@@ -35,6 +35,7 @@ import com.senior.app.ui.activity.MainActivity;
 import com.senior.app.ui.viewholder.RestaurantViewHolder;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import model.Restaurant;
 
@@ -99,6 +100,9 @@ public abstract class BaseFragment extends Fragment {
                         intent.putStringArrayListExtra(DetailActivity.PHOTOS_EXTRA, (ArrayList<String>) restaurant.getPhotos());
                         intent.putStringArrayListExtra(DetailActivity.CUISINES_EXTRA, (ArrayList<String>) restaurant.getCuisines());
                         intent.putExtra(DetailActivity.RESTAURANT_EXTRA, restaurant);
+                        MainActivity mainActivity = (MainActivity) getActivity();
+                        intent.putExtra(DetailActivity.SPINNER_INDEX_EXTRA, mainActivity.getCurrentSpinnerIndex());
+                        intent.putExtra(DetailActivity.LAST_CITY_INDEX_EXTRA, mainActivity.getLastCityIndex());
                         startActivity(intent);
                     }
                 });
@@ -190,6 +194,8 @@ public abstract class BaseFragment extends Fragment {
                 return "new-york-city";
             case 1:
                 return "istanbul";
+            case 2:
+                return "london";
             default:
                 return "new-york-city";
         }

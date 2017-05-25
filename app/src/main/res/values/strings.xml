@@ -29,6 +29,12 @@
         <item name="favorites">@string/tab_section_favorites</item>
     </string-array>
 
+    <string-array name="filter_array">
+        <item name="rating">Rating</item>
+        <item name="name">Name</item>
+        <item name="popularity">Popularity</item>
+    </string-array>
+
     <!-- Res -->
     <string name="title_activity_maps">Map</string>
     <string name="not_available">Not available</string>

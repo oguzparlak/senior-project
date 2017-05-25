@@ -19,13 +19,11 @@ import utils.ZomatoNetworkUtils;
 
 public class ExploreFragment extends BaseFragment {
 
-    private static final String TAG = ExploreFragment.class.getSimpleName();
-
     // Return the Restaurants to be explored in selected city
     @Override
     Query getQuery(DatabaseReference reference) {
-        int cityIndex = getCityIndex();
-        return reference.child(getDatabaseRoot(cityIndex)).orderByChild("reviewCount").limitToFirst(100);
+        MainActivity activity = (MainActivity) getActivity();
+        return activity.getQuery(reference, activity.getChoice());
     }
 
 }

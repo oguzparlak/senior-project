@@ -86,5 +86,31 @@ public class ZomatoNetworkUtils {
         return searchUri.toString();
     }
 
+    public static String getZomatoReviewReference(String rootRef) {
+        switch (rootRef) {
+            case "new-york-city":
+                return "nyc-zomato-reviews";
+            case "london":
+                return "london-zomato-reviews";
+            case "istanbul":
+                return "istanbul-zomato-reviews";
+            default:
+                throw new IllegalArgumentException("Unknown reference");
+        }
+    }
+
+    public static String getZomatoRestaurantReference(String rootRef) {
+        switch (rootRef) {
+            case "new-york-city":
+                return "nyc-zomato-external";
+            case "london":
+                return "london-zomato-external";
+            case "istanbul":
+                return "istanbul-zomato-external";
+            default:
+                throw new IllegalArgumentException("Unknown reference");
+        }
+    }
+
 
 }

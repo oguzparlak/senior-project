@@ -1,19 +1,23 @@
 package com.senior.app.ui.activity;
 
 import android.Manifest;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
+import android.support.annotation.Nullable;
+import android.support.annotation.RestrictTo;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.widget.Toolbar;
@@ -27,9 +31,6 @@ import android.widget.SearchView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import com.arlib.floatingsearchview.FloatingSearchView;
-import com.firebase.ui.auth.AuthUI;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.LocationServices;
@@ -37,11 +38,12 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
-import com.google.gson.Gson;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.senior.app.R;
 import com.senior.app.ui.adapter.TabSectionsAdapter;
@@ -67,13 +69,13 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     private FirebaseAuth.AuthStateListener mAuthListener;
     private FirebaseAuth mAuth;
 
-    private static final int PLACE_PICKER_REQUEST = 1;
     private static final int LOCATION_REQUEST = 2;
 
     private static final String SPINNER_INDEX = "SPINNER_INDEX";
 
     private int lastCityIndex = 0;
     private int currentSpinnerIndex;
+    private int choice = -1;
 
     private TabSectionsAdapter mTabSectionsAdapter;
     private ViewPager mViewPager;
@@ -92,7 +94,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         
         // Init FirebaseAuth
         mAuth = FirebaseAuth.getInstance();
-        
+
         mAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
@@ -115,42 +117,29 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
 
     }
 
-    private Restaurant getRestaurant(final String query) {
-        return null;
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView) searchItem.getActionView();
-
-        // TODO Handle search, Firebase queries are extremely slow!
+        final SearchView searchView = (SearchView) searchItem.getActionView();
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onQueryTextSubmit(final String query) {
-                mRootReference.child("new-york-city").orderByChild("rating")
-                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(DataSnapshot dataSnapshot) {
-                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                            Restaurant restaurant = snapshot.getValue(Restaurant.class);
-                            if (restaurant.getName().equals("\nFlavors\n")) {
-                                Log.d(TAG, "onDataChange: restaurant: " + restaurant.getName());
-                                break;
-                            }
-
-                        }
-                    }
-
-                    @Override
-                    public void onCancelled(DatabaseError databaseError) {
-
-                    }
-                });
+            public boolean onQueryTextSubmit(String query) {
+                Log.d(TAG, "onQueryTextSubmit: newQuery: " + query);
+                // Create an Intent to SearchActivity
+                Intent searchIntent = new Intent(MainActivity.this, SearchActivity.class);
+                searchIntent.putExtra(SearchActivity.QUERY_EXTRA, query);
+                searchIntent.putExtra(SearchActivity.DATABASE_REFERENCE_EXTRA, getDatabaseRoot(getLastCityIndex()));
+                searchIntent.putExtra(SearchActivity.CITY_INDEX_EXTRA, getLastCityIndex());
+                searchIntent.putExtra(SearchActivity.SPINNER_INDEX_EXTRA, getCurrentSpinnerIndex());
+                startActivity(searchIntent);
+                View v = getCurrentFocus();
+                if (v != null) {
+                    getCurrentFocus().clearFocus();
+                }
                 return false;
             }
 
@@ -184,6 +173,8 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_filter){
+            showFilterDialog();
         } else if (id == R.id.action_search) {
             if (inNearbyTab()) {
                 // make a new API call with Zomato
@@ -208,28 +199,11 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     }
 
     /**
-     * Sends a Place Picker Request
-     */
-    private void openPlacePicker() {
-        PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
-        try {
-            startActivityForResult(builder.build(this), PLACE_PICKER_REQUEST);
-        } catch (GooglePlayServicesRepairableException | GooglePlayServicesNotAvailableException e) {
-            Log.w(TAG, "openPlacePicker: Play Services not available.");
-        }
-    }
-
-    /**
      * Handle Google Places Requests here
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == PLACE_PICKER_REQUEST) {
-            if (resultCode == RESULT_OK) {
-                // Get the data of the selected place
-                Place place = PlacePicker.getPlace(this, data);
-            }
-        } else if (requestCode == LOGIN_REQUEST) {
+        if (requestCode == LOGIN_REQUEST) {
             if (resultCode == RESULT_OK) {
                 selectTabAt(0);
                 Toast.makeText(this, "Welcome, " + FirebaseAuth.getInstance().getCurrentUser().getDisplayName(), Toast.LENGTH_LONG).show();
@@ -312,6 +286,10 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
     
     public int getLastCityIndex() {
         return lastCityIndex;
+    }
+
+    public int getCurrentSpinnerIndex() {
+        return mSpinner.getSelectedItemPosition();
     }
 
     public void selectTabAt(int pos) {
@@ -446,6 +424,64 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
                     Log.w(TAG, "onFailure: Failed with statusCode: " + statusCode);
                 }
             });
+        }
+    }
+
+    private void showFilterDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+        builder.setTitle("Sort by")
+                .setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                })
+                .setSingleChoiceItems(R.array.filter_array, -1, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        if (i == 0) {
+                            choice = 0;
+                        } else if (i == 1) {
+                            choice = 1;
+                        } else if (i == 2) {
+                            choice = 2;
+                        }
+                        mViewPager.getAdapter().notifyDataSetChanged();
+                        dialogInterface.dismiss();
+                    }
+                });
+
+        builder.create().show();
+    }
+
+    public int getChoice() {
+        return choice;
+    }
+
+    public Query getQuery(DatabaseReference reference, int choice) {
+        switch (choice) {
+            case 0:
+                return reference.child(getDatabaseRoot(getLastCityIndex())).orderByChild("rating").limitToLast(200);
+            case 1:
+                return reference.child(getDatabaseRoot(getLastCityIndex())).orderByChild("name").limitToFirst(200);
+            case 2:
+                reference.child(getDatabaseRoot(getLastCityIndex())).orderByChild("reviewCount").limitToLast(200);
+            default:
+                return reference.child(getDatabaseRoot(getLastCityIndex())).orderByChild("rating").limitToFirst(200);
+        }
+    }
+
+    public String getDatabaseRoot(int index) {
+        switch (index) {
+            case 0:
+                return "new-york-city";
+            case 1:
+                return "istanbul";
+            case 2:
+                return "london";
+            default:
+                return "new-york-city";
         }
     }
 
