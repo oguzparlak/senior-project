@@ -251,28 +251,9 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_below="@id/detail_activity_specs"
-                        android:text="Specs goes here....."
+                        android:text="@string/not_available"
                         android:layout_marginTop="4dp"
                         android:textSize="12sp" />
-
-                    <Button
-                        android:id="@+id/detail_activity_menu_button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="42dp"
-                        android:textSize="12sp"
-                        android:layout_alignParentRight="true"
-                        android:text="See Menu on Zomato"
-                        style="@style/Widget.AppCompat.Button.Colored" />
-
-                    <Button
-                        android:id="@+id/detail_activity_photos_button"
-                        android:layout_width="wrap_content"
-                        android:layout_height="42dp"
-                        android:textSize="12sp"
-                        android:layout_alignParentRight="true"
-                        android:layout_below="@id/detail_activity_menu_button"
-                        android:text="See more photos"
-                        style="@style/Widget.AppCompat.Button.Colored" />
 
                 </RelativeLayout>
 

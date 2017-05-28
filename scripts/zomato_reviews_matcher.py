@@ -6,7 +6,7 @@ def main():
     database = firebase.FirebaseApplication('https://senior-app-1487777466334.firebaseio.com', None)
 
     try:
-        zomato_restaurants = database.get('/london-zomato-external', None)
+        zomato_restaurants = database.get('/istanbul-zomato-external', None)
     except Exception:
         print "Couldn't connect to Firebase"
 
@@ -14,7 +14,7 @@ def main():
         zomato_id = res_details['id']
         
         # If already matched skip
-        if (database.get('london-zomato-reviews/', res_id) != None):
+        if (database.get('istanbul-zomato-reviews/', res_id) != None):
             pass
         else:
             # Make an API Call and push the reviews
@@ -35,7 +35,7 @@ def main():
                     review_details = review['review']
                     # Push the review
                     try:
-                        database.post('/london-zomato-reviews/' + res_id, review_details)
+                        database.post('/istanbul-zomato-reviews/' + res_id, review_details)
                     except Exception:
                         print "Firebase error when post"
                         continue

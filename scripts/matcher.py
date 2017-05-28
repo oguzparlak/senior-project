@@ -13,16 +13,16 @@ def main():
     database = firebase.FirebaseApplication('https://senior-app-1487777466334.firebaseio.com', None)
     
     # read one by one
-    restaurants = database.get('/london', None)
+    restaurants = database.get('/istanbul', None)
     
     for res_id, res_details in restaurants.iteritems():
         name = res_details['name']
         address = res_details['address']
         # If it doesn't match yet, make Zomato API Call
-        if (database.get('london-zomato-external/', res_id) == None):
+        if (database.get('istanbul-zomato-external/', res_id) == None):
             details_session = requests.Session()
-            details_response = details_session.get('https://developers.zomato.com/api/v2.1/search?entity_id=61&entity_type=city&q=' + name.replace(" ", "%20"),
-                        headers={'user-key': 'ffc07a23459d9c09b21b5c4dc0ce55e4'})
+            details_response = details_session.get('https://developers.zomato.com/api/v2.1/search?entity_id=59&entity_type=city&q=' + name.replace(" ", "%20"),
+                        headers={'user-key': '8b000e3bd6d2a4434c926aeca9a040d0'})
 
             
             try:
@@ -45,11 +45,11 @@ def main():
                 zomato_address = location['address']
 
                 similarity = get_similarity_ratio(zomato_address, address)
-                # 0.6 is considered as a match 
-                if similarity > 0.6:
+                # 0.8 is considered as a match 
+                if similarity > 0.8:
                     # there is a match push the data and break the loop
                     try:
-                        database.put('/london-zomato-external', res_id, restaurant_details)
+                        database.put('/istanbul-zomato-external', res_id, restaurant_details)
                     except Exception:
                         print "Can't push to Firebase"
                         continue 

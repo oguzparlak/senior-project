@@ -171,9 +171,7 @@ public class MainActivity extends BaseActivity implements AdapterView.OnItemSele
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_filter){
+        if (id == R.id.action_filter) {
             showFilterDialog();
         } else if (id == R.id.action_search) {
             if (inNearbyTab()) {

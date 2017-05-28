@@ -12,12 +12,10 @@ import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.CardView;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 
@@ -63,13 +61,11 @@ import java.util.Random;
 import cz.msebera.android.httpclient.Header;
 import model.Review;
 import model.Restaurant;
+import su.levenetc.android.badgeview.BadgeView;
 import utils.GooglePlacesNetworkUtils;
 import utils.ZomatoNetworkUtils;
 
 public class DetailActivity extends BaseActivity implements OnMapReadyCallback, View.OnClickListener {
-
-    // TODO Fix minor bugs in DetailActivity, Details, Zomato Links, Rating
-    // TODO Zomato Reviews Istanbul, Matching...
 
     private static final String TAG = DetailActivity.class.getSimpleName();
 
@@ -98,8 +94,6 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     private Button mCommentButton;
     private Button mCallButton;
     private Button mSeeReviewsButton;
-    private Button mZomatoButton;
-    private Button mPhotoButton;
 
     private TextView mRestaurantTitle;
     private TextView mRestaurantAddress;
@@ -109,6 +103,7 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     private TextView mSpecsTextView;
     private TextView mOpenNowTextView;
     private TextView mOpeningHoursTextView;
+    private BadgeView mRatingBadgeView;
 
     private CardView mOpeningHoursCard;
 
@@ -127,6 +122,8 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
     private List<Review> mReviews;
 
     private boolean mapMarked = false;
+    private int mSourceCount = 0;
+    private double mTotalRating = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -209,6 +206,21 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
             }
         } else {
             userOnline = false;
+        }
+
+        double rating;
+        try {
+            rating = Double.parseDouble(mRestaurant.getRating());
+            updateRating(rating);
+        } catch (Exception ex) {
+            Log.d(TAG, "onCreate: Rating is None");
+        }
+
+        // Specs
+        Map<String, String> specs = mRestaurant.getSpecs();
+        if (specs != null) {
+            String dishes = specs.get("dishes");
+            mSpecsTextView.setText(dishes);
         }
 
         mReviews = new ArrayList<>();
@@ -304,8 +316,6 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         mCommentButton = (Button) findViewById(R.id.detail_activity_post_comment_button);
         mCallButton = (Button) findViewById(R.id.detail_activity_call_button);
         mSeeReviewsButton = (Button) findViewById(R.id.detail_activity_see_reviews_button);
-        mZomatoButton = (Button) findViewById(R.id.detail_activity_menu_button);
-        mPhotoButton = (Button) findViewById(R.id.detail_activity_photos_button);
         mPhoneNumberTextView = (TextView) findViewById(R.id.detail_activity_call_main_text);
         mCuisinesTextView = (TextView) findViewById(R.id.detail_activity_cuisines_main_text);
         mAveragePriceTextView = (TextView) findViewById(R.id.detail_activity_average_price_main_text);
@@ -315,6 +325,7 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         mOpenNowTextView = (TextView) findViewById(R.id.detail_activity_open_now);
         mOpeningHoursTextView = (TextView) findViewById(R.id.detail_activity_opening_hours);
         mOpeningHoursCard = (CardView) findViewById(R.id.detail_activity_fifth_card);
+        mRatingBadgeView = (BadgeView) findViewById(R.id.detail_activity_badge_view);
 
         // Set OnClickListener
         mCallButton.setOnClickListener(this);
@@ -353,6 +364,10 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                     mGoogleMap.moveCamera(mCameraUpdate);
                     // Info
                     long averageCost = (long) restaurantMap.get("average_cost_for_two");
+                    Map ratingMap = (Map) restaurantMap.get("user_rating");
+                    double rating = Double.parseDouble((String) ratingMap.get("aggregate_rating"));
+                    if (rating != 0)
+                        updateRating(rating);
                     mAveragePriceTextView.setText(getString(R.string.average_cost, averageCost));
                     String address = (String) locationMap.get("address");
                     mRestaurantAddress.setText(address);
@@ -525,6 +540,14 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
         }
     }
 
+    private void updateRating(double rating) {
+        mSourceCount++;
+        mTotalRating += rating;
+        double currentRating = mTotalRating / mSourceCount;
+        String ratingFormat = String.format("%.2f", currentRating);
+        mRatingBadgeView.setValue(ratingFormat);
+    }
+
     private AutocompleteFilter buildAutoCompleteFilter() {
         String countryTag;
         if (spinnerIndex == 0) {
@@ -583,6 +606,8 @@ public class DetailActivity extends BaseActivity implements OnMapReadyCallback, 
                                                 weekDay[i] = (String) weekDayText.get(i);
                                                 mOpeningHoursTextView.append(weekDay[i] + "\n\n");
                                             }
+                                            double rating = result.getDouble("rating");
+                                            updateRating(rating);
                                             // Reviews
                                             for (int i = 0; i < reviews.length(); i++) {
                                                 JSONObject review = reviews.getJSONObject(i);
