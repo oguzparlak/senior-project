@@ -12,6 +12,12 @@
 
 ### Android
 
-## Screenshots
+## Run Instructions
 
-### Coming soon... 
+### To be able to run this app, you will need [adb](https://developer.android.com/studio/command-line/adb.html#Enabling) or [Android Studio](https://developer.android.com/studio/index.html)
+
+### If you are using adb use the following command:
+```
+adb shell am start -n "com.senior.app/com.senior.app.ui.activity.MainActivity" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER
+```
+### If you are using Android Studio please read this [official tutorial](https://developer.android.com/studio/run/index.html)
